@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<title>The Ember Tavern — 编辑器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.css"/>
+<style>
+  :root {
+    --bg: #0f0b07;
+    --surface: #1a140d;
+    --surface2: #241c12;
+    --ink: #f1e6d2;
+    --ink-dim: #b9a888;
+    --ink-faint: #7a6a50;
+    --accent: #f0a26b;
+    --accent-2: #e87c3f;
+    --border: rgba(240,226,198,.12);
+    --sans: "Noto Sans SC", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 13px; overflow: hidden; }
+
+  /* ---- Layout ---- */
+  .app { display: flex; flex-direction: column; height: 100%; }
+
+  .toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .toolbar .logo { font-weight: 600; color: var(--accent); margin-right: 8px; letter-spacing: .04em; }
+  .toolbar .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+  .btn {
+    background: none; border: 1px solid var(--border); color: var(--ink-dim);
+    padding: 5px 12px; border-radius: 4px; cursor: pointer; font: inherit;
+    font-size: 12px; white-space: nowrap; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: border-color .2s, color .2s;
+  }
+  .btn:hover { border-color: var(--ink-dim); color: var(--ink); }
+  .btn.accent { border-color: var(--accent); color: var(--accent); }
+  .btn.accent:hover { background: var(--accent); color: #14100a; }
+  .btn.danger:hover { border-color: #ef8a8a; color: #ef8a8a; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .save-status { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+
+  .workspace { display: flex; flex: 1; min-height: 0; }
+
+  /* ---- Graph ---- */
+  #drawflow {
+    flex: 1; min-width: 0; position: relative;
+    background: var(--bg);
+    background-image:
+      radial-gradient(rgba(240,162,107,.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Drawflow overrides */
+  .drawflow .connection .main-path { stroke: var(--accent); stroke-width: 2.5px; }
+  .drawflow .connection .main-path:hover { stroke: var(--accent-2); stroke-width: 3px; }
+  .drawflow-node {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0; min-width: 200px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    transition: border-color .2s;
+  }
+  .drawflow-node:hover { border-color: rgba(240,162,107,.4); }
+  .drawflow-node.selected { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(240,162,107,.2), 0 4px 20px rgba(0,0,0,.4); }
+  .drawflow-node .input, .drawflow-node .output {
+    background: var(--accent); border: 2px solid var(--bg);
+    width: 12px; height: 12px; border-radius: 50%;
+  }
+  .drawflow-node .input:hover, .drawflow-node .output:hover { background: var(--accent-2); }
+
+  /* Node card */
+  .node-card { padding: 12px 14px; }
+  .node-card .nc-badge {
+    font-family: var(--mono); font-size: 10px; color: var(--ink-faint);
+    text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px;
+  }
+  .node-card .nc-name { font-weight: 600; color: var(--ink); font-size: 13px; margin-bottom: 6px; word-break: break-all; }
+  .node-card .nc-preview {
+    font-size: 11.5px; color: var(--ink-dim);
+    max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    margin-bottom: 6px;
+  }
+  .node-card .nc-meta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+  .node-card .nc-meta .end-badge { color: #ef8a8a; margin-left: 6px; }
+  .node-card .nc-meta .start-badge { color: #9cd8a6; margin-left: 6px; }
+
+  /* ---- Side panel ---- */
+  .panel {
+    width: 320px; flex-shrink: 0; border-left: 1px solid var(--border);
+    background: var(--surface); display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    font-weight: 600; font-size: 13px; color: var(--ink);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .panel-head .ph-sub { font-size: 11px; font-family: var(--mono); color: var(--ink-faint); font-weight: 400; }
+  .panel-body { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 16px; }
+  .panel-body::-webkit-scrollbar { width: 6px; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .panel-empty { color: var(--ink-faint); font-size: 12px; text-align: center; padding: 40px 20px; line-height: 1.7; }
+
+  .field-label { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 5px; }
+  input[type=text], textarea, select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    color: var(--ink); padding: 7px 10px; border-radius: 4px;
+    font: inherit; font-family: var(--mono); font-size: 12px;
+    outline: none; resize: vertical; transition: border-color .2s;
+  }
+  input[type=text]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+
+  .divider { height: 1px; background: var(--border); margin: 0 -16px; }
+
+  /* Choice rows */
+  .choice-list { display: flex; flex-direction: column; gap: 10px; }
+  .choice-row {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .choice-row-header { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+  .choice-num { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); width: 16px; }
+  .choice-row-header .btn-del { margin-left: auto; padding: 2px 6px; font-size: 11px; border-radius: 3px; }
+
+  .panel-foot {
+    padding: 12px 16px; border-top: 1px solid var(--border);
+    display: flex; gap: 8px; flex-shrink: 0;
+  }
+  .panel-foot .btn { flex: 1; justify-content: center; }
+
+  /* ---- Modal ---- */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(5,3,2,.85); backdrop-filter: blur(4px);
+    display: grid; place-items: center; padding: 20px;
+  }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 24px; max-width: 600px; width: 100%;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .modal h3 { font-size: 14px; color: var(--ink); }
+  .modal textarea { height: 320px; font-size: 12px; }
+  .modal .row { display: flex; gap: 8px; justify-content: flex-end; }
+  .msg { font-family: var(--mono); font-size: 11px; padding: 6px 10px; border-radius: 4px; }
+  .msg.ok { background: rgba(156,216,166,.1); color: #9cd8a6; border: 1px solid rgba(156,216,166,.2); }
+  .msg.err { background: rgba(239,138,138,.1); color: #ef8a8a; border: 1px solid rgba(239,138,138,.2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <span class="logo">◆ DTL Editor</span>
+    <div class="sep"></div>
+    <button class="btn" id="btn-new">＋ 新场景</button>
+    <button class="btn" id="btn-import">导入 .dtl</button>
+    <button class="btn" id="btn-export">导出 .dtl</button>
+    <div class="sep"></div>
+    <button class="btn accent" id="btn-save">保存</button>
+    <a class="btn" href="player.html" target="_blank">▶ 预览</a>
+    <div class="spacer"></div>
+    <span class="save-status" id="save-status"></span>
+  </div>
+
+  <!-- Workspace -->
+  <div class="workspace">
+    <div id="drawflow"></div>
+
+    <!-- Side panel -->
+    <div class="panel" id="panel">
+      <div class="panel-head">
+        <span id="panel-title">属性</span>
+        <span class="ph-sub" id="panel-sub">选中一个场景节点</span>
+      </div>
+      <div class="panel-body" id="panel-body">
+        <div class="panel-empty">
+          点击节点查看和编辑场景内容。<br/>
+          拖拽节点下方的连接点可以连接场景。<br/>
+          连线代表跳转关系。
+        </div>
+      </div>
+      <div class="panel-foot" id="panel-foot" style="display:none">
+        <button class="btn accent" id="btn-apply">应用更改</button>
+        <button class="btn danger" id="btn-del-scene">删除场景</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="modal-backdrop" id="modal-import" style="display:none">
+  <div class="modal">
+    <h3>导入 .dtl 剧情</h3>
+    <div><div class="field-label">粘贴 .dtl 内容</div><textarea id="import-text" placeholder="# 标题&#10;set {gold} = 10&#10;&#10;label start&#10;..."></textarea></div>
+    <div id="import-msg" style="display:none"></div>
+    <div class="row">
+      <button class="btn" id="import-cancel">取消</button>
+      <button class="btn accent" id="import-ok">导入并覆盖</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export modal -->
+<div class="modal-backdrop" id="modal-export" style="display:none">
+  <div class="modal">
+    <h3>导出 .dtl 剧情</h3>
+    <div><div class="field-label">复制以下内容保存为 story.dtl</div><textarea id="export-text" readonly></textarea></div>
+    <div class="row">
+      <button class="btn" id="export-copy">复制到剪贴板</button>
+      <button class="btn accent" id="export-close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.js"></script>
+<script>
+const { scenesFromDTL, dtlFromScenes, parseDTL } = DTLEngine;
+
+const STORAGE_KEY = 'ember_dtl';
+const DEFAULT_DTL = `# The Ember Tavern
+set {gold} = 12
+set {courage} = 3
+set {has_dagger} = false
+set {knows_secret} = false
+
+label tavern_door
+雨像针一样扎在石板路上。Ember 客栈的百叶窗缝里漏出昏黄的光，里面传来木柴烟和肉汤的味道。你的外套已经湿透了。
+老妇人: 别杵在那儿了，孩子。要进来就进来，要不就把门带上。
+你在门槛上犹豫。雨没有犹豫。
+- 跨进门，把门在身后推上。
+\tjump taproom
+- 站在门口先打量一下屋里。
+\tset {courage} -= 1
+\tjump taproom
+- 转身走回风雨里。
+\tjump storm_out
+
+label taproom
+酒馆里的暖意几乎让你的眼睛起雾。后墙的壁炉轰隆作响。
+set {gold} -= 1
+酒保: 麦酒四铜板，炖菜六个。楼上有床铺，如果你运气转好的话。
+- 靠到吧台边。
+\tjump at_the_bar
+- 走到壁炉前烤火。
+\tjump the_hearth
+- 慢慢挪到角落桌附近偷听。 | [if {courage} >= 3]
+\tjump eavesdrop
+
+label the_hearth
+火烧得够大声。铁架旁边，露出一把匕首的尖。
+- 趁没人看见把它揣进怀里。
+\tset {has_dagger} = true
+\tset {courage} += 1
+\tjump taproom
+- 别碰，不关你的事。
+\tjump taproom
+
+label eavesdrop
+戴兜帽的男人: ……货物在第三更的钟声时走。
+set {knows_secret} = true
+你脚下一块木板吱呀一声。三颗脑袋同时转了过来。
+- 笑一笑，假装是掉了一枚铜板。
+\tset {gold} -= 1
+\tjump taproom
+- 直接冲向大门。
+\tjump storm_out
+
+label at_the_bar
+你在高脚凳上坐下。
+酒保: 看你这张脸，得来一杯浓的。
+end
+
+label storm_out
+雨把你整个吞了进去。无论酒馆里本要发生什么，都没了你的份。
+end`;
+
+// ---- state ----
+let editor;
+let scenes = [], initSets = [], startLabel = '';
+let nodeIdByName = {};   // sceneName → drawflow node id
+let selectedNodeId = null;
+let loading = false;
+
+// ---- init drawflow ----
+function initDrawflow() {
+  const container = document.getElementById('drawflow');
+  editor = new Drawflow(container);
+  editor.reroute = true;
+  editor.start();
+
+  editor.on('nodeSelected', id => { selectedNodeId = parseInt(id); showPanel(selectedNodeId); });
+  editor.on('nodeUnselected', () => { selectedNodeId = null; hidePanel(); });
+  editor.on('nodeRemoved', id => { selectedNodeId = null; hidePanel(); });
+
+  editor.on('connectionCreated', conn => {
+    if (loading) return;
+    const srcId = parseInt(conn.output_id);
+    const tgtId = parseInt(conn.input_id);
+    const srcName = editor.getNodeFromId(srcId).name;
+    const tgtName = editor.getNodeFromId(tgtId).name;
+    const sc = scenes.find(s => s.name === srcName);
+    if (!sc) return;
+    // Assign to first empty choice, or add new choice
+    const empty = sc.choices.find(c => !c.goto);
+    if (empty) { empty.goto = tgtName; }
+    else { sc.choices.push({ text: '→ ' + tgtName, condition: '', goto: tgtName, actions: [] }); }
+    refreshNodeCard(srcId);
+    if (selectedNodeId === srcId) showPanel(srcId);
+  });
+
+  editor.on('connectionRemoved', conn => {
+    if (loading) return;
+    const srcId = parseInt(conn.output_id);
+    const tgtId = parseInt(conn.input_id);
+    const srcName = editor.getNodeFromId(srcId).name;
+    const tgtName = editor.getNodeFromId(tgtId).name;
+    const sc = scenes.find(s => s.name === srcName);
+    if (!sc) return;
+    const idx = sc.choices.findIndex(c => c.goto === tgtName);
+    if (idx >= 0) sc.choices.splice(idx, 1);
+    refreshNodeCard(srcId);
+    if (selectedNodeId === srcId) showPanel(srcId);
+  });
+}
+
+// ---- node management ----
+
+function nodeCardHtml(sc) {
+  const isStart = sc.name === startLabel;
+  const preview = sc.lines[0] ? sc.lines[0].slice(0, 40) + (sc.lines[0].length > 40 ? '…' : '') : '（空场景）';
+  const meta = sc.choices.length > 0
+    ? `${sc.choices.length} 个选项`
+    : sc.directJump ? `→ ${sc.directJump}` : sc.end ? '结束' : '无出口';
+  return `<div class="node-card">
+    <div class="nc-badge">LABEL</div>
+    <div class="nc-name">${sc.name}</div>
+    <div class="nc-preview">${escHtml(preview)}</div>
+    <div class="nc-meta">${meta}${sc.end ? '<span class="end-badge">END</span>' : ''}${isStart ? '<span class="start-badge">START</span>' : ''}</div>
+  </div>`;
+}
+
+function addNode(sc, x, y) {
+  const id = editor.addNode(
+    sc.name, 1, 1, x, y, 'scene-node', sc, nodeCardHtml(sc)
+  );
+  nodeIdByName[sc.name] = id;
+  return id;
+}
+
+function refreshNodeCard(nodeId) {
+  const sc = scenes.find(s => nodeIdByName[s.name] === nodeId);
+  if (!sc) return;
+  const el = document.querySelector(`#node-${nodeId} .drawflow_content_node`);
+  if (el) el.innerHTML = nodeCardHtml(sc);
+  editor.updateNodeDataFromId(nodeId, sc);
+}
+
+function rebuildConnections(nodeId) {
+  const sc = scenes.find(s => nodeIdByName[s.name] === nodeId);
+  if (!sc) return;
+  // remove existing outgoing connections
+  const node = editor.getNodeFromId(nodeId);
+  const conns = node.outputs.output_1.connections.slice();
+  for (const c of conns) {
+    try { editor.removeSingleConnection(nodeId, parseInt(c.node), 'output_1', 'input_1'); } catch {}
+  }
+  // add from scene data
+  const targets = [...new Set([
+    ...sc.choices.map(c => c.goto).filter(Boolean),
+    sc.directJump
+  ].filter(Boolean))];
+  for (const t of targets) {
+    const tId = nodeIdByName[t];
+    if (tId !== undefined) {
+      try { editor.addConnection(nodeId, tId, 'output_1', 'input_1'); } catch {}
+    }
+  }
+}
+
+// ---- auto layout ----
+
+function autoLayout(scenes, start) {
+  const positions = {}, visited = new Set();
+  const colHeights = {};
+  const queue = [[start, 0]];
+  while (queue.length) {
+    const [name, col] = queue.shift();
+    if (visited.has(name)) continue;
+    visited.add(name);
+    const row = colHeights[col] || 0;
+    colHeights[col] = row + 1;
+    positions[name] = { x: col * 260 + 40, y: row * 180 + 40 };
+    const sc = scenes.find(s => s.name === name);
+    if (!sc) continue;
+    const nexts = [...new Set([...sc.choices.map(c => c.goto), sc.directJump].filter(Boolean))];
+    for (const n of nexts) if (!visited.has(n)) queue.push([n, col + 1]);
+  }
+  // orphans
+  let orphanY = Math.max(0, ...Object.values(positions).map(p => p.y)) + 180;
+  for (const sc of scenes) {
+    if (!positions[sc.name]) { positions[sc.name] = { x: 40, y: orphanY }; orphanY += 180; }
+  }
+  return positions;
+}
+
+// ---- load DTL into graph ----
+
+function loadDTL(text) {
+  loading = true;
+  editor.clearModuleSelected();
+  editor.import({ drawflow: { Home: { data: {} } } });
+
+  const parsed = scenesFromDTL(text);
+  scenes = parsed.scenes;
+  initSets = parsed.initSets;
+  startLabel = parsed.startLabel;
+  nodeIdByName = {};
+
+  const positions = autoLayout(scenes, startLabel);
+  for (const sc of scenes) {
+    const pos = positions[sc.name] || { x: 40, y: 40 };
+    addNode(sc, pos.x, pos.y);
+  }
+
+  // Draw connections after all nodes exist
+  for (const sc of scenes) {
+    const srcId = nodeIdByName[sc.name];
+    if (srcId === undefined) continue;
+    const targets = [...new Set([...sc.choices.map(c => c.goto), sc.directJump].filter(Boolean))];
+    for (const t of targets) {
+      const tId = nodeIdByName[t];
+      if (tId !== undefined) {
+        try { editor.addConnection(srcId, tId, 'output_1', 'input_1'); } catch {}
+      }
+    }
+  }
+
+  loading = false;
+  setSaveStatus('已加载');
+}
+
+// ---- serialize ----
+
+function serializeDTL() {
+  // Collect current node positions and update scenes from drawflow data
+  const exp = editor.export().drawflow.Home.data;
+  const orderedScenes = [];
+  // Use scenes array order (start first)
+  for (const sc of scenes) {
+    const nodeId = nodeIdByName[sc.name];
+    if (nodeId === undefined) continue;
+    const node = exp[nodeId];
+    if (node) Object.assign(sc, node.data); // pull latest data
+    orderedScenes.push(sc);
+  }
+  return dtlFromScenes(initSets, orderedScenes);
+}
+
+// ---- side panel ----
+
+function showPanel(nodeId) {
+  const sc = scenes.find(s => nodeIdByName[s.name] === nodeId);
+  if (!sc) return;
+
+  document.getElementById('panel-title').textContent = sc.name;
+  document.getElementById('panel-sub').textContent = 'label · 编辑中';
+  document.getElementById('panel-foot').style.display = 'flex';
+
+  const body = document.getElementById('panel-body');
+  body.innerHTML = '';
+
+  // Name
+  addField(body, '标签名 (label)', `<input type="text" id="pf-name" value="${escAttr(sc.name)}" />`);
+
+  // Lines
+  addField(body, '内容（每行一条，支持 对话/旁白/set）', `<textarea id="pf-lines" rows="6">${escHtml(sc.lines.join('\n'))}</textarea>`);
+
+  body.appendChild(makeDivider());
+
+  // Choices
+  const choiceSection = document.createElement('div');
+  const allNames = scenes.map(s => s.name);
+  renderChoiceSection(choiceSection, sc.choices, allNames);
+  body.appendChild(choiceSection);
+
+  body.appendChild(makeDivider());
+
+  // Options
+  const optDiv = document.createElement('div');
+  optDiv.innerHTML = `<div class="field-label">场景设置</div>
+    <label style="display:flex;align-items:center;gap:8px;color:var(--ink-dim);font-size:12px;cursor:pointer">
+      <input type="checkbox" id="pf-end" ${sc.end ? 'checked' : ''}> 标记为结束场景 (end)
+    </label>`;
+  body.appendChild(optDiv);
+
+  // Direct jump (no choices)
+  const jumpDiv = document.createElement('div');
+  const jumpOptions = ['（无直接跳转）', ...allNames.filter(n => n !== sc.name)].map(n =>
+    `<option value="${escAttr(n)}" ${sc.directJump === n ? 'selected' : ''}>${escHtml(n)}</option>`
+  ).join('');
+  jumpDiv.innerHTML = `<div class="field-label">直接跳转（无选项时生效）</div><select id="pf-jump">${jumpOptions}</select>`;
+  body.appendChild(jumpDiv);
+
+  // Apply
+  document.getElementById('btn-apply').onclick = () => applyPanel(nodeId, sc);
+  document.getElementById('btn-del-scene').onclick = () => deleteScene(nodeId, sc.name);
+}
+
+function renderChoiceSection(container, choices, allNames) {
+  container.innerHTML = `<div class="field-label" style="margin-bottom:8px">选项（连线自动更新）</div>`;
+  const list = document.createElement('div');
+  list.className = 'choice-list';
+  list.id = 'choice-list';
+
+  choices.forEach((ch, i) => {
+    const row = document.createElement('div');
+    row.className = 'choice-row';
+    const opts = allNames.map(n => `<option value="${escAttr(n)}" ${ch.goto === n ? 'selected' : ''}>${escHtml(n)}</option>`).join('');
+    row.innerHTML = `
+      <div class="choice-row-header">
+        <span class="choice-num">${i + 1}</span>
+        <span style="color:var(--ink-dim);font-size:11px">选项</span>
+        <button class="btn danger choice-row-header btn-del" data-idx="${i}" style="margin-left:auto">✕</button>
+      </div>
+      <div class="field-label">选项文字</div>
+      <input type="text" class="ch-text" data-idx="${i}" value="${escAttr(ch.text)}" placeholder="选项文字">
+      <div class="field-label" style="margin-top:6px">条件（可选，如 {courage} >= 3）</div>
+      <input type="text" class="ch-cond" data-idx="${i}" value="${escAttr(ch.condition)}" placeholder="留空表示始终显示">
+      <div class="field-label" style="margin-top:6px">跳转到</div>
+      <select class="ch-goto" data-idx="${i}"><option value="">（不跳转）</option>${opts}</select>`;
+    list.appendChild(row);
+  });
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn';
+  addBtn.textContent = '＋ 添加选项';
+  addBtn.style.width = '100%';
+  addBtn.onclick = () => {
+    choices.push({ text: '新选项', condition: '', goto: '', actions: [] });
+    renderChoiceSection(container, choices, allNames);
+  };
+
+  container.appendChild(list);
+  container.appendChild(addBtn);
+
+  // Delete handlers
+  container.querySelectorAll('.btn-del').forEach(btn => {
+    btn.onclick = () => {
+      choices.splice(parseInt(btn.dataset.idx), 1);
+      renderChoiceSection(container, choices, allNames);
+    };
+  });
+}
+
+function applyPanel(nodeId, sc) {
+  // Read name
+  const newName = document.getElementById('pf-name').value.trim().replace(/\s+/g, '_');
+  if (!newName) return;
+
+  // Rename if needed
+  if (newName !== sc.name) {
+    // Check duplicate
+    if (scenes.some(s => s.name === newName)) { setSaveStatus('标签名已存在', true); return; }
+    delete nodeIdByName[sc.name];
+    sc.name = newName;
+    nodeIdByName[newName] = nodeId;
+    editor.drawflow.drawflow.Home.data[nodeId].name = newName;
+  }
+
+  // Lines
+  sc.lines = document.getElementById('pf-lines').value.split('\n').filter(l => l.trim());
+
+  // Choices from panel
+  const newChoices = [];
+  document.querySelectorAll('.choice-row').forEach((row, i) => {
+    newChoices.push({
+      text: row.querySelector('.ch-text').value,
+      condition: row.querySelector('.ch-cond').value.trim(),
+      goto: row.querySelector('.ch-goto').value,
+      actions: sc.choices[i]?.actions || []
+    });
+  });
+  sc.choices = newChoices;
+
+  sc.end = document.getElementById('pf-end').checked;
+  const jumpVal = document.getElementById('pf-jump').value;
+  sc.directJump = (jumpVal && jumpVal !== '（无直接跳转）') ? jumpVal : null;
+
+  editor.updateNodeDataFromId(nodeId, sc);
+  refreshNodeCard(nodeId);
+
+  loading = true; // suppress connection events during rebuild
+  rebuildConnections(nodeId);
+  loading = false;
+
+  showPanel(nodeId);
+  setSaveStatus('有未保存的更改');
+}
+
+function deleteScene(nodeId, name) {
+  if (!confirm(`确认删除场景 "${name}"？此操作不可撤销。`)) return;
+  editor.removeNodeId('node-' + nodeId);
+  scenes = scenes.filter(s => s.name !== name);
+  delete nodeIdByName[name];
+  if (startLabel === name) startLabel = scenes[0]?.name || '';
+  hidePanel();
+  setSaveStatus('有未保存的更改');
+}
+
+function hidePanel() {
+  document.getElementById('panel-title').textContent = '属性';
+  document.getElementById('panel-sub').textContent = '选中一个场景节点';
+  document.getElementById('panel-foot').style.display = 'none';
+  document.getElementById('panel-body').innerHTML =
+    `<div class="panel-empty">点击节点查看和编辑场景内容。<br/>拖拽节点下方的连接点可以连接场景。<br/>连线代表跳转关系。</div>`;
+}
+
+// ---- helpers ----
+
+function addField(parent, label, html) {
+  const d = document.createElement('div');
+  d.innerHTML = `<div class="field-label">${label}</div>${html}`;
+  parent.appendChild(d);
+}
+
+function makeDivider() {
+  const d = document.createElement('div');
+  d.className = 'divider';
+  return d;
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return String(s).replace(/"/g,'&quot;'); }
+
+function setSaveStatus(msg, isErr) {
+  const el = document.getElementById('save-status');
+  el.textContent = msg;
+  el.style.color = isErr ? '#ef8a8a' : 'var(--ink-faint)';
+}
+
+// ---- toolbar actions ----
+
+document.getElementById('btn-new').onclick = () => {
+  let name = 'new_scene';
+  let n = 1;
+  while (scenes.some(s => s.name === name)) name = `new_scene_${n++}`;
+  const sc = { name, lines: ['（新场景内容）'], choices: [], end: false, directJump: null };
+  scenes.push(sc);
+  if (!startLabel) startLabel = name;
+  const id = addNode(sc, 60 + Math.random() * 200, 60 + Math.random() * 200);
+  setSaveStatus('有未保存的更改');
+};
+
+document.getElementById('btn-save').onclick = () => {
+  try {
+    const dtl = serializeDTL();
+    localStorage.setItem(STORAGE_KEY, dtl);
+    setSaveStatus('已保存 ' + new Date().toLocaleTimeString());
+  } catch (e) { setSaveStatus('保存失败: ' + e.message, true); }
+};
+
+document.getElementById('btn-import').onclick = () => {
+  document.getElementById('modal-import').style.display = 'grid';
+  document.getElementById('import-msg').style.display = 'none';
+};
+document.getElementById('import-cancel').onclick = () => {
+  document.getElementById('modal-import').style.display = 'none';
+};
+document.getElementById('import-ok').onclick = () => {
+  const text = document.getElementById('import-text').value.trim();
+  const msgEl = document.getElementById('import-msg');
+  if (!text || !/^label\s+\S/m.test(text)) {
+    msgEl.className = 'msg err'; msgEl.textContent = '内容无效：至少需要一个 label 行。'; msgEl.style.display = 'block'; return;
+  }
+  loadDTL(text);
+  localStorage.setItem(STORAGE_KEY, text);
+  document.getElementById('modal-import').style.display = 'none';
+};
+
+document.getElementById('btn-export').onclick = () => {
+  document.getElementById('export-text').value = serializeDTL();
+  document.getElementById('modal-export').style.display = 'grid';
+};
+document.getElementById('export-close').onclick = () => {
+  document.getElementById('modal-export').style.display = 'none';
+};
+document.getElementById('export-copy').onclick = () => {
+  navigator.clipboard.writeText(document.getElementById('export-text').value)
+    .then(() => setSaveStatus('已复制到剪贴板'))
+    .catch(() => setSaveStatus('复制失败，请手动复制', true));
+};
+
+// Close modals on backdrop click
+['modal-import','modal-export'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+  });
+});
+
+// ---- boot ----
+
+initDrawflow();
+
+const saved = (() => { try { return localStorage.getItem(STORAGE_KEY); } catch { return null; } })();
+if (saved && /^label\s+\S/m.test(saved)) {
+  loadDTL(saved);
+} else {
+  loadDTL(DEFAULT_DTL);
+  localStorage.setItem(STORAGE_KEY, DEFAULT_DTL);
+}
+</script>
+</body>
+</html>

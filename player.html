@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<title>The Ember Tavern — 播放器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"/>
+<style>
+  :root {
+    --bg:#14100a;--ink:#f1e6d2;--ink-dim:#b9a888;--ink-faint:#7a6a50;
+    --accent:#f0a26b;--accent-2:#e87c3f;--line:rgba(240,226,198,.14);
+    --serif:"Noto Serif SC",Georgia,serif;
+    --sans:"Noto Sans SC",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:17px;overflow:hidden}
+  .stage{position:fixed;inset:0;display:flex;flex-direction:column;transition:background 1.4s;background:var(--bg)}
+  .stage::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 20%,rgba(240,162,107,.08),transparent 60%),radial-gradient(ellipse at 50% 100%,rgba(0,0,0,.6),transparent 60%);pointer-events:none}
+  .stage::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.025) 1px,transparent 1px);background-size:3px 3px;mix-blend-mode:overlay;opacity:.5}
+  .topbar{position:relative;z-index:3;display:flex;align-items:center;gap:14px;padding:18px 28px;color:var(--ink-dim);font-family:var(--sans);font-size:12.5px;letter-spacing:.04em}
+  .topbar .title{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:14px;letter-spacing:.05em}
+  .topbar .crumb{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+  .topbar .spacer{flex:1}
+  .topbar .btn{background:none;border:1px solid var(--line);color:var(--ink-dim);padding:5px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:12px;text-decoration:none;display:inline-flex;align-items:center}
+  .topbar .btn:hover{border-color:var(--ink-dim);color:var(--ink)}
+  .topbar .btn.primary{border-color:var(--accent);color:var(--accent)}
+  .topbar .btn.primary:hover{background:var(--accent);color:#14100a}
+  .reader{position:relative;z-index:2;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;padding:20px 28px 40px;overflow-y:auto}
+  .reader::-webkit-scrollbar{width:10px}
+  .reader::-webkit-scrollbar-thumb{background:rgba(240,226,198,.12);border-radius:6px}
+  .page{width:min(680px,100%);display:flex;flex-direction:column;gap:18px;padding:40px 0 20px}
+  .scene-id{font-family:var(--mono);font-size:11px;color:var(--ink-faint);letter-spacing:.08em;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px;align-self:flex-start}
+  .scene-id .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .line{font-family:var(--serif);font-size:18px;line-height:1.85;color:var(--ink);animation:rise .55s ease;text-wrap:pretty}
+  .line.dlg{padding-left:14px;border-left:2px solid var(--accent)}
+  .line.dlg .speaker{display:block;font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+  .line.sys{font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);padding:4px 10px;background:rgba(240,226,198,.04);border-left:2px solid var(--ink-faint);align-self:flex-start}
+  .line.sys .delta.up{color:#9cd8a6}
+  .line.sys .delta.down{color:#ef8a8a}
+  .choices{margin-top:18px;display:flex;flex-direction:column;gap:10px;animation:rise .5s .2s ease}
+  .choices .prompt{font-family:var(--sans);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:2px}
+  .choice{text-align:left;background:rgba(240,226,198,.03);border:1px solid var(--line);color:var(--ink);font-family:var(--serif);font-size:17px;padding:14px 18px;border-radius:6px;cursor:pointer;display:grid;grid-template-columns:22px 1fr auto;gap:14px;align-items:center;transition:background .25s,border-color .25s,transform .25s}
+  .choice:hover:not(:disabled){background:rgba(240,162,107,.08);border-color:var(--accent);transform:translateX(4px)}
+  .choice:disabled{opacity:.38;cursor:not-allowed}
+  .choice .n{font-family:var(--mono);font-size:12px;color:var(--ink-faint);width:22px;height:22px;display:grid;place-items:center;border:1px solid var(--line);border-radius:4px}
+  .choice:hover:not(:disabled) .n{color:var(--accent);border-color:var(--accent)}
+  .choice .cond{font-family:var(--mono);font-size:11px;color:var(--ink-faint);padding:2px 8px;background:rgba(240,226,198,.04);border-radius:10px}
+  .choice:disabled .cond{color:#ef8a8a}
+  .end-card{margin-top:24px;padding:24px 28px;text-align:center;border:1px solid var(--accent);border-radius:8px;background:linear-gradient(180deg,rgba(240,162,107,.06),rgba(240,162,107,.02));font-family:var(--serif);font-size:18px;color:var(--accent);letter-spacing:.08em}
+  .end-card .lab{display:block;font-family:var(--sans);font-size:11px;color:var(--ink-faint);letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
+  .end-card .btn{margin-top:16px;background:var(--accent);color:#14100a;border:0;padding:8px 20px;border-radius:4px;font-family:var(--sans);font-weight:600;cursor:pointer;font-size:13px}
+  .end-card .btn:hover{background:var(--accent-2)}
+  .hud{position:relative;z-index:3;display:flex;align-items:center;gap:16px;padding:12px 28px 18px;font-family:var(--mono);font-size:11px;color:var(--ink-faint);border-top:1px solid var(--line);background:rgba(10,8,5,.5);overflow-x:auto;white-space:nowrap}
+  .hud .var{display:inline-flex;align-items:center;gap:6px}
+  .hud .var .k{color:var(--ink-faint)}
+  .hud .var .v{color:var(--ink)}
+  .hud .var .v.bool-t{color:#9cd8a6}
+  .hud .var .v.bool-f{color:#ef8a8a}
+  .hud .sep{width:1px;height:12px;background:var(--line)}
+  .hud .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .hud .right a,.hud .right button{color:var(--ink-dim);background:none;border:0;cursor:pointer;font:inherit;text-decoration:none}
+  .hud .right a:hover,.hud .right button:hover{color:var(--accent)}
+  .overlay{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:rgba(10,8,5,.92);backdrop-filter:blur(6px);padding:40px 20px}
+  .overlay .box{max-width:560px;width:100%;background:#1a130a;border:1px solid var(--line);border-radius:8px;padding:28px 32px;font-family:var(--sans);font-size:14px;line-height:1.7}
+  .overlay h2{margin:0 0 12px;font-family:var(--serif);color:var(--accent);font-weight:600}
+  .overlay pre{background:#0a0805;padding:10px 14px;border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--ink-dim);overflow:auto;white-space:pre-wrap;word-break:break-word}
+  .overlay .row{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
+  .overlay .btn{background:var(--accent);color:#14100a;border:0;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:600;font-family:var(--sans)}
+  @keyframes rise{0%{transform:translateY(6px)}100%{transform:translateY(0)}}
+  @media(prefers-reduced-motion:reduce){.line,.choices{animation:none!important}}
+  .line:nth-child(1){animation-delay:.02s}.line:nth-child(2){animation-delay:.12s}
+  .line:nth-child(3){animation-delay:.22s}.line:nth-child(4){animation-delay:.32s}
+  .line:nth-child(5){animation-delay:.42s}.line:nth-child(6){animation-delay:.52s}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="topbar">
+    <span class="title" id="t-title">…</span>
+    <span class="crumb" id="t-crumb"></span>
+    <span class="spacer"></span>
+    <a class="btn" href="editor.html">编辑器</a>
+    <button class="btn primary" id="b-restart">重新开始</button>
+  </div>
+  <div class="reader" id="reader"></div>
+  <div class="hud" id="hud"></div>
+</div>
+
+<div class="overlay" id="err" style="display:none">
+  <div class="box">
+    <h2 id="err-title">无法加载剧情</h2>
+    <div id="err-body"></div>
+    <pre id="err-detail"></pre>
+    <div class="row">
+      <button class="btn" id="err-retry">重试</button>
+    </div>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script>
+const { parseDTL, evalCond, applySet } = DTLEngine;
+const $ = id => document.getElementById(id);
+
+const STORY_URL = 'story.dtl';
+const STORAGE_KEY = 'ember_dtl';
+const PROGRESS_KEY = 'ember_progress';
+
+let DTL_TEXT = '';
+let EVENTS = [], LABEL_INDEX = {}, START_LABEL = '', TITLE = '';
+let state = {}, currentLabel = '';
+
+// ---- render ----
+
+function renderScene(labelName) {
+  const startIdx = LABEL_INDEX[labelName];
+  if (startIdx === undefined) { showError('找不到标签', `"${labelName}" 不存在`); return; }
+
+  currentLabel = labelName;
+  $('t-title').textContent = TITLE || 'Story';
+  $('t-crumb').textContent = '· ' + labelName;
+
+  const reader = $('reader');
+  reader.innerHTML = '';
+  const page = document.createElement('div');
+  page.className = 'page';
+
+  const sid = document.createElement('div');
+  sid.className = 'scene-id';
+  sid.innerHTML = `<span class="dot"></span>label · ${labelName}`;
+  page.appendChild(sid);
+
+  const { lines, choices, endText } = collectScene(startIdx + 1);
+
+  for (const ln of lines) {
+    const d = document.createElement('div');
+    if (ln.kind === 'dlg') {
+      d.className = 'line dlg';
+      d.innerHTML = `<span class="speaker"></span><span class="t"></span>`;
+      d.querySelector('.speaker').textContent = ln.speaker;
+      d.querySelector('.t').textContent = ln.text;
+    } else if (ln.kind === 'sys') {
+      d.className = 'line sys';
+      d.innerHTML = ln.html;
+    } else {
+      d.className = 'line narr';
+      d.textContent = ln.text;
+    }
+    page.appendChild(d);
+  }
+
+  if (endText !== null) {
+    const e = document.createElement('div');
+    e.className = 'end-card';
+    e.innerHTML = `<span class="lab">—— 结束 ——</span>${endText}<br/><button class="btn" id="e-restart">从头再来</button>`;
+    page.appendChild(e);
+    reader.appendChild(page);
+    page.querySelector('#e-restart').onclick = restart;
+  } else if (choices.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'choices';
+    wrap.innerHTML = `<div class="prompt">你怎么做？</div>`;
+    choices.forEach((c, i) => {
+      const ok = evalCond(c.condition, state);
+      const btn = document.createElement('button');
+      btn.className = 'choice';
+      btn.disabled = !ok;
+      btn.innerHTML = `<span class="n">${i + 1}</span><span class="tx"></span>`
+        + (c.condition ? `<span class="cond">${ok ? '✓' : '✕'} ${c.condition}</span>` : '<span></span>');
+      btn.querySelector('.tx').textContent = c.text;
+      btn.onclick = () => {
+        for (const act of c.actions) applySet(act, state);
+        if (c.goto) renderScene(c.goto);
+      };
+      wrap.appendChild(btn);
+    });
+    page.appendChild(wrap);
+    reader.appendChild(page);
+  } else {
+    reader.appendChild(page);
+  }
+
+  reader.scrollTop = 0;
+  renderHud();
+  try { localStorage.setItem(PROGRESS_KEY, JSON.stringify({ label: labelName, state })); } catch {}
+}
+
+function collectScene(fromIdx) {
+  const lines = [], choices = [];
+  let endText = null, i = fromIdx;
+  const condStack = [];
+
+  function isActive() { return condStack.every(c => c.active); }
+  function popAbove(indent) { while (condStack.length && condStack[condStack.length - 1].baseIndent >= indent) condStack.pop(); }
+
+  while (i < EVENTS.length) {
+    const ev = EVENTS[i];
+    if (ev.type === 'label' && ev.indent === 0) break;
+
+    if (ev.type === 'if') { popAbove(ev.indent); const m = evalCond(ev.condition, state); condStack.push({ active: m, done: m, baseIndent: ev.indent }); i++; continue; }
+    if (ev.type === 'elif') {
+      while (condStack.length && condStack[condStack.length-1].baseIndent > ev.indent) condStack.pop();
+      const top = condStack[condStack.length-1];
+      if (top && top.baseIndent === ev.indent) { const m = !top.done && evalCond(ev.condition, state); top.active = m; if (m) top.done = true; }
+      i++; continue;
+    }
+    if (ev.type === 'else') {
+      while (condStack.length && condStack[condStack.length-1].baseIndent > ev.indent) condStack.pop();
+      const top = condStack[condStack.length-1];
+      if (top && top.baseIndent === ev.indent) top.active = !top.done;
+      i++; continue;
+    }
+
+    popAbove(ev.indent - 1);
+    const active = isActive();
+
+    if (ev.type === 'text' && active) {
+      lines.push(ev.speaker ? { kind: 'dlg', speaker: ev.speaker, text: ev.body } : { kind: 'narr', text: ev.body });
+    } else if (ev.type === 'set' && active) {
+      const before = { ...state };
+      applySet(ev, state);
+      lines.push({ kind: 'sys', html: sysDeltaHtml(before, state) });
+    } else if (ev.type === 'choice' && ev.indent === 0 && active) {
+      while (i < EVENTS.length && EVENTS[i].type === 'choice' && EVENTS[i].indent === 0) {
+        const ch = EVENTS[i]; i++;
+        const choice = { text: ch.text, condition: ch.condition, actions: [], goto: null };
+        while (i < EVENTS.length && EVENTS[i].indent > 0) {
+          if (EVENTS[i].type === 'set') choice.actions.push(EVENTS[i]);
+          else if (EVENTS[i].type === 'jump') choice.goto = EVENTS[i].label;
+          i++;
+        }
+        choices.push(choice);
+      }
+      break;
+    } else if (ev.type === 'jump' && ev.indent === 0 && active) {
+      setTimeout(() => renderScene(ev.label), 0); break;
+    } else if (ev.type === 'end' && active) {
+      endText = '— 草稿待续 —'; i++; break;
+    }
+    i++;
+  }
+  return { lines, choices, endText };
+}
+
+function sysDeltaHtml(before, after) {
+  const parts = [];
+  for (const k of Object.keys(after)) {
+    if (before[k] === after[k]) continue;
+    if (typeof after[k] === 'number') {
+      const d = after[k] - (before[k] ?? 0);
+      parts.push(`<span class="delta ${d > 0 ? 'up' : 'down'}">${k} ${d > 0 ? '+' : ''}${d}</span>`);
+    } else {
+      parts.push(`<span class="delta">${k} = ${after[k]}</span>`);
+    }
+  }
+  return parts.join('  ·  ') || '<span>set</span>';
+}
+
+function renderHud() {
+  const parts = [];
+  for (const [k, v] of Object.entries(state)) {
+    const cls = typeof v === 'boolean' ? (v ? 'bool-t' : 'bool-f') : '';
+    const txt = typeof v === 'boolean' ? (v ? 'true' : 'false') : String(v);
+    parts.push(`<span class="var"><span class="k">${k}</span><span class="v ${cls}">${txt}</span></span>`);
+  }
+  $('hud').innerHTML = parts.join('<span class="sep"></span>')
+    + `<span class="right"><a href="story.dtl" target="_blank">story.dtl ↗</a></span>`;
+}
+
+// ---- boot ----
+
+function restart() {
+  state = {};
+  const parsed = parseDTL(DTL_TEXT);
+  EVENTS = parsed.events; LABEL_INDEX = parsed.labelIndex; START_LABEL = parsed.startLabel;
+  for (const s of parsed.initSets) applySet(s, state);
+  renderScene(START_LABEL);
+}
+
+function boot(dtlText) {
+  $('err').style.display = 'none';
+  DTL_TEXT = dtlText;
+  state = {};
+  const parsed = parseDTL(DTL_TEXT);
+  EVENTS = parsed.events; LABEL_INDEX = parsed.labelIndex; START_LABEL = parsed.startLabel;
+  for (const s of parsed.initSets) applySet(s, state);
+
+  const titleLine = DTL_TEXT.match(/^#\s*(.+)/m);
+  TITLE = titleLine ? titleLine[1].trim() : 'Story';
+
+  let progress = null;
+  try { progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || 'null'); } catch {}
+  if (progress && LABEL_INDEX[progress.label] !== undefined) {
+    state = { ...state, ...progress.state };
+    renderScene(progress.label);
+  } else {
+    renderScene(START_LABEL);
+  }
+}
+
+function showError(title, body) {
+  $('err').style.display = 'grid';
+  $('err-title').textContent = title;
+  $('err-body').textContent = body;
+}
+
+async function load() {
+  // 1) localStorage override from editor
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) { boot(saved); return; }
+  } catch {}
+  // 2) story.dtl file
+  try {
+    const res = await fetch(STORY_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    boot(await res.text());
+  } catch (e) {
+    showError('无法加载剧情', '请先在编辑器中创建剧情，或将 story.dtl 放在同一目录下。');
+  }
+}
+
+$('b-restart').onclick = restart;
+$('err-retry').onclick = load;
+load();
+</script>
+</body>
+</html>
