@@ -8,281 +8,210 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.css"/>
 <style>
-/* ---- Variables ---- */
 :root {
-  --bg:      #0d0a07;
-  --s1:      #161009;
-  --s2:      #1e160d;
-  --s3:      #271d12;
-  --ink:     #f1e6d2;
-  --dim:     #b9a888;
-  --faint:   #7a6a50;
-  --accent:  #f0a26b;
-  --accent2: #e87c3f;
-  --ok:      #9cd8a6;
-  --err:     #ef8a8a;
-  --warn:    #f0d080;
-  --border:  rgba(240,226,198,.1);
-  --border2: rgba(240,226,198,.18);
-  --sans:    "Noto Sans SC", system-ui, sans-serif;
-  --mono:    "JetBrains Mono", ui-monospace, monospace;
-  --sidebar-w: 220px;
-  --ai-w:      300px;
+  --bg:#0d0a07; --s1:#161009; --s2:#1e160d; --s3:#271d12;
+  --ink:#f1e6d2; --dim:#b9a888; --faint:#7a6a50;
+  --accent:#f0a26b; --accent2:#e87c3f;
+  --ok:#9cd8a6; --err:#ef8a8a; --warn:#f0d080;
+  --border:rgba(240,226,198,.1); --border2:rgba(240,226,198,.18);
+  --sans:"Noto Sans SC",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --sidebar-w:220px; --ai-w:300px;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 13px; overflow: hidden; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100%}
 
-/* ---- App shell ---- */
-.app { display: flex; flex-direction: column; height: 100%; }
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--s1);flex-shrink:0;z-index:10}
+.toolbar .brand{font-weight:600;color:var(--accent);font-size:13px;letter-spacing:.05em;margin-right:6px}
+.toolbar .sep{width:1px;height:18px;background:var(--border2);margin:0 4px}
+.toolbar .spacer{flex:1}
+.toolbar .project-name{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.btn{background:none;border:1px solid var(--border);color:var(--dim);padding:4px 11px;border-radius:4px;cursor:pointer;font:inherit;font-size:12px;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:border-color .15s,color .15s,background .15s}
+.btn:hover{border-color:var(--border2);color:var(--ink)}
+.btn.accent{border-color:var(--accent);color:var(--accent)}
+.btn.accent:hover{background:var(--accent);color:#14100a}
+.btn.ok-btn{border-color:var(--ok);color:var(--ok)}
+.btn.ok-btn:hover{background:var(--ok);color:#0d0a07}
+.btn.danger{color:var(--err);border-color:transparent}
+.btn.danger:hover{border-color:var(--err)}
+.btn:disabled{opacity:.38;cursor:not-allowed}
 
-/* ---- Toolbar ---- */
-.toolbar {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 14px; border-bottom: 1px solid var(--border);
-  background: var(--s1); flex-shrink: 0; z-index: 10;
-}
-.toolbar .brand { font-weight: 600; color: var(--accent); font-size: 13px; letter-spacing: .05em; margin-right: 6px; }
-.toolbar .sep { width: 1px; height: 18px; background: var(--border2); margin: 0 4px; }
-.toolbar .spacer { flex: 1; }
-.toolbar .project-name { font-family: var(--mono); font-size: 11px; color: var(--faint); }
-.btn {
-  background: none; border: 1px solid var(--border); color: var(--dim);
-  padding: 4px 11px; border-radius: 4px; cursor: pointer; font: inherit;
-  font-size: 12px; white-space: nowrap; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 5px;
-  transition: border-color .15s, color .15s, background .15s;
-}
-.btn:hover { border-color: var(--border2); color: var(--ink); }
-.btn.accent { border-color: var(--accent); color: var(--accent); }
-.btn.accent:hover { background: var(--accent); color: #14100a; }
-.btn.ok-btn { border-color: var(--ok); color: var(--ok); }
-.btn.ok-btn:hover { background: var(--ok); color: #0d0a07; }
-.btn.danger { color: var(--err); border-color: transparent; }
-.btn.danger:hover { border-color: var(--err); }
-.btn:disabled { opacity: .38; cursor: not-allowed; }
+/* Workspace */
+.workspace{display:flex;flex:1;min-height:0}
 
-/* ---- Workspace ---- */
-.workspace { display: flex; flex: 1; min-height: 0; }
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;border-right:1px solid var(--border);background:var(--s1);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-head{padding:10px 12px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-head .sh-title{font-weight:600;font-size:12px;color:var(--ink)}
+.sidebar-head .sh-meta{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:2px}
+.sidebar-body{flex:1;overflow-y:auto;padding:8px 0}
+.sidebar-body::-webkit-scrollbar{width:4px}
+.sidebar-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.sidebar-foot{padding:8px 10px;border-top:1px solid var(--border);flex-shrink:0}
 
-/* ---- Left Sidebar ---- */
-.sidebar {
-  width: var(--sidebar-w); flex-shrink: 0;
-  border-right: 1px solid var(--border);
-  background: var(--s1);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.sidebar-head {
-  padding: 10px 12px 8px; border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.sidebar-head .sh-title { font-weight: 600; font-size: 12px; color: var(--ink); }
-.sidebar-head .sh-meta { font-family: var(--mono); font-size: 10px; color: var(--faint); margin-top: 2px; }
-.sidebar-body { flex: 1; overflow-y: auto; padding: 8px 0; }
-.sidebar-body::-webkit-scrollbar { width: 4px; }
-.sidebar-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-.sidebar-foot { padding: 8px 10px; border-top: 1px solid var(--border); flex-shrink: 0; }
-.sidebar-foot .btn { width: 100%; justify-content: center; font-size: 11px; }
+.beat-card{margin:2px 8px;padding:8px 10px;background:none;border:1px solid transparent;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:background .15s,border-color .15s;text-align:left;width:calc(100% - 16px)}
+.beat-card:hover{background:var(--s2);border-color:var(--border)}
+.beat-card.selected{background:var(--s2);border-color:var(--accent)}
+.beat-card .bc-beat{font-family:var(--mono);font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+.beat-card .bc-title{font-size:12px;font-weight:500;color:var(--ink)}
+.beat-card .bc-meta{font-family:var(--mono);font-size:10px;color:var(--faint)}
+.beat-card .bc-status{display:inline-flex;align-items:center;gap:4px;font-size:10px;margin-top:2px}
+.status-draft{color:var(--faint)} .status-designed{color:var(--warn)}
+.status-skeleton{color:#7ec8e3} .status-complete{color:var(--ok)}
+.branching-marker{margin:4px 8px;padding:5px 10px;background:rgba(240,162,107,.06);border:1px solid rgba(240,162,107,.2);border-radius:4px;font-family:var(--mono);font-size:10px;color:var(--accent);display:flex;align-items:center;gap:6px}
 
-.act-header {
-  padding: 6px 12px 4px; font-family: var(--mono); font-size: 10px;
-  color: var(--faint); letter-spacing: .08em; text-transform: uppercase;
-  display: flex; align-items: center; gap: 6px;
-}
-.act-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+/* Center */
+.center{flex:1;min-width:0;display:flex;flex-direction:column}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--s1);flex-shrink:0}
+.tab{padding:9px 18px;font-size:12px;color:var(--faint);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;background:none;border-top:0;border-left:0;border-right:0;font:inherit;white-space:nowrap}
+.tab:hover{color:var(--dim)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:disabled{opacity:.35;cursor:not-allowed}
+.tab-content{flex:1;min-height:0;overflow:hidden}
+.tab-pane{display:none;height:100%;overflow-y:auto;padding:20px 24px}
+.tab-pane.active{display:block}
+.tab-pane::-webkit-scrollbar{width:6px}
+.tab-pane::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+#pane-graph{padding:0;display:none}
+#pane-graph.active{display:flex;flex-direction:column}
 
-.block-card {
-  margin: 2px 8px; padding: 8px 10px;
-  background: none; border: 1px solid transparent;
-  border-radius: 6px; cursor: pointer;
-  display: flex; flex-direction: column; gap: 3px;
-  transition: background .15s, border-color .15s;
-  text-align: left; width: calc(100% - 16px);
-}
-.block-card:hover { background: var(--s2); border-color: var(--border); }
-.block-card.selected { background: var(--s2); border-color: var(--accent); }
-.block-card .bc-title { font-size: 12px; font-weight: 500; color: var(--ink); }
-.block-card .bc-meta { font-family: var(--mono); font-size: 10px; color: var(--faint); }
-.block-card .bc-status { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; margin-top: 2px; }
-.status-draft     { color: var(--faint); }
-.status-designed  { color: var(--warn); }
-.status-skeleton  { color: #7ec8e3; }
-.status-complete  { color: var(--ok); }
-.branching-marker {
-  margin: 4px 8px; padding: 5px 10px;
-  background: rgba(240,162,107,.06); border: 1px solid rgba(240,162,107,.2);
-  border-radius: 4px; font-family: var(--mono); font-size: 10px; color: var(--accent);
-  display: flex; align-items: center; gap: 6px;
-}
+/* Form */
+.section{margin-bottom:24px}
+.section-title{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;color:var(--faint);margin-bottom:4px}
+input[type=text],input[type=number],input[type=password],textarea,select{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--ink);padding:6px 10px;border-radius:4px;font:inherit;font-family:var(--mono);font-size:12px;outline:none;resize:vertical;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+select option{background:var(--s2)}
+.tag-input{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:5px 8px;background:var(--s2);border:1px solid var(--border);border-radius:4px;cursor:text}
+.tag{background:var(--s3);border:1px solid var(--border2);border-radius:3px;padding:2px 7px;font-size:11px;color:var(--dim);display:flex;align-items:center;gap:4px}
+.tag .tag-del{color:var(--faint);cursor:pointer;font-size:12px;line-height:1;background:none;border:0}
+.tag .tag-del:hover{color:var(--err)}
+.tag-input input{background:none;border:0;outline:0;color:var(--ink);font:inherit;font-size:12px;min-width:80px;padding:0}
+.var-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.var-row input[type=text]{flex:2} .var-row input[type=number]{flex:1}
+.var-row .btn{flex-shrink:0;padding:4px 7px}
+.ending-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px}
+.ending-card .ec-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ending-card .ec-title{font-weight:600;font-size:12px}
 
-/* ---- Center ---- */
-.center { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.tab-bar {
-  display: flex; border-bottom: 1px solid var(--border);
-  background: var(--s1); flex-shrink: 0;
-}
-.tab {
-  padding: 9px 18px; font-size: 12px; color: var(--faint);
-  cursor: pointer; border-bottom: 2px solid transparent;
-  transition: color .15s, border-color .15s;
-  background: none; border-top: 0; border-left: 0; border-right: 0;
-  font: inherit; white-space: nowrap;
-}
-.tab:hover { color: var(--dim); }
-.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.tab:disabled { opacity: .35; cursor: not-allowed; }
-.tab-content { flex: 1; min-height: 0; overflow: hidden; }
-.tab-pane { display: none; height: 100%; overflow-y: auto; padding: 20px 24px; }
-.tab-pane.active { display: block; }
-.tab-pane::-webkit-scrollbar { width: 6px; }
-.tab-pane::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-/* node graph pane has no padding */
-#pane-graph { padding: 0; display: none; }
-#pane-graph.active { display: flex; flex-direction: column; }
+/* Beat Sheet (L2) */
+.beat-sheet-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.beat-sheet-header select{flex:1;min-width:180px;max-width:300px}
+.beat-timeline{position:relative;height:40px;background:var(--s2);border:1px solid var(--border);border-radius:6px;margin-bottom:20px;overflow:hidden}
+.beat-timeline-bar{position:absolute;top:0;bottom:0;background:rgba(240,162,107,.15);border-right:1px solid var(--accent)}
+.beat-timeline-label{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:9px;color:var(--accent);padding:0 4px;white-space:nowrap;overflow:hidden}
+.beat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.beat-item{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:border-color .15s,background .15s;display:flex;flex-direction:column;gap:6px}
+.beat-item:hover{border-color:var(--border2);background:var(--s3)}
+.beat-item.selected{border-color:var(--accent)}
+.beat-item .bi-pct{font-family:var(--mono);font-size:10px;color:var(--accent);font-weight:600}
+.beat-item .bi-name{font-size:13px;font-weight:600;color:var(--ink)}
+.beat-item .bi-desc{font-size:11px;color:var(--faint);line-height:1.5}
+.beat-item .bi-block{margin-top:4px;padding-top:6px;border-top:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.beat-item .bi-block-title{font-size:11px;color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.beat-item .bi-status{font-size:10px;padding:1px 6px;border-radius:3px;font-family:var(--mono)}
+.branching-beat{border-color:rgba(240,162,107,.4);background:rgba(240,162,107,.04)}
+.branching-beat .bi-name::after{content:' ◆';color:var(--accent);font-size:10px}
 
-/* ---- Form elements ---- */
-.section { margin-bottom: 24px; }
-.section-title {
-  font-size: 11px; color: var(--faint); text-transform: uppercase;
-  letter-spacing: .08em; margin-bottom: 10px;
-  display: flex; align-items: center; gap: 8px;
-}
-.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-.field { margin-bottom: 12px; }
-.field label { display: block; font-size: 11px; color: var(--faint); margin-bottom: 4px; }
-input[type=text], input[type=number], input[type=password], textarea, select {
-  width: 100%; background: var(--s2); border: 1px solid var(--border);
-  color: var(--ink); padding: 6px 10px; border-radius: 4px;
-  font: inherit; font-family: var(--mono); font-size: 12px;
-  outline: none; resize: vertical; transition: border-color .15s;
-}
-input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-select option { background: var(--s2); }
-.tag-input { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; padding: 5px 8px; background: var(--s2); border: 1px solid var(--border); border-radius: 4px; cursor: text; }
-.tag { background: var(--s3); border: 1px solid var(--border2); border-radius: 3px; padding: 2px 7px; font-size: 11px; color: var(--dim); display: flex; align-items: center; gap: 4px; }
-.tag .tag-del { color: var(--faint); cursor: pointer; font-size: 12px; line-height: 1; background: none; border: 0; }
-.tag .tag-del:hover { color: var(--err); }
-.tag-input input { background: none; border: 0; outline: 0; color: var(--ink); font: inherit; font-size: 12px; min-width: 80px; padding: 0; }
+/* Emotion curve */
+.emotion-curve{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0}
+.emotion-point{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--dim)}
+.emotion-point .ep-name{background:var(--s3);border:1px solid var(--border);border-radius:3px;padding:2px 7px}
+.emotion-point .ep-pct{font-family:var(--mono);color:var(--faint);font-size:10px}
+.emotion-arrow{color:var(--faint)}
 
-/* Variable row */
-.var-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
-.var-row input[type=text] { flex: 2; }
-.var-row input[type=number] { flex: 1; }
-.var-row .btn { flex-shrink: 0; padding: 4px 7px; }
+/* Choice point */
+.cp-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px}
+.cp-card .cp-head{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.cp-source-author{font-size:10px;color:var(--ok);border:1px solid var(--ok);border-radius:3px;padding:1px 6px}
+.cp-source-ai{font-size:10px;color:var(--warn);border:1px solid var(--warn);border-radius:3px;padding:1px 6px}
+.cp-card .cp-hint{font-size:12px;color:var(--ink);margin-bottom:5px}
+.cp-card .cp-options{display:flex;flex-direction:column;gap:3px}
+.cp-card .cp-opt{font-size:11px;color:var(--dim);display:flex;gap:6px}
+.cp-card .cp-opt .opt-text{color:var(--ink)}
+.cp-card .cp-opt .opt-eff{font-family:var(--mono);color:var(--accent)}
+.cp-actions{display:flex;gap:6px;margin-top:8px}
 
-/* Ending card */
-.ending-card { background: var(--s2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
-.ending-card .ec-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.ending-card .ec-title { font-weight: 600; font-size: 12px; }
-.ending-card .ec-cond { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+/* Skeleton & foreshadow */
+.skeleton-box{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:14px;min-height:120px;font-family:var(--mono);font-size:12px;color:var(--dim);line-height:1.8;white-space:pre-wrap;word-break:break-word}
+.skeleton-placeholder{color:var(--faint);font-style:italic;font-family:var(--sans)}
+.foreshadow-list{display:flex;flex-direction:column;gap:4px}
+.foreshadow-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.foreshadow-item input[type=checkbox]{accent-color:var(--accent);width:13px;height:13px}
+.foreshadow-item .fi-text{flex:1;color:var(--dim)}
+.state-display{display:flex;flex-wrap:wrap;gap:6px}
+.state-chip{background:var(--s3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-family:var(--mono);font-size:11px}
+.state-chip .sk{color:var(--faint)} .state-chip .sv{color:var(--ink)}
 
-/* Emotion curve display */
-.emotion-curve { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 0; }
-.emotion-point { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--dim); }
-.emotion-point .ep-name { background: var(--s3); border: 1px solid var(--border); border-radius: 3px; padding: 2px 7px; }
-.emotion-point .ep-pct { font-family: var(--mono); color: var(--faint); font-size: 10px; }
-.emotion-arrow { color: var(--faint); }
+/* Beat context bar in block detail */
+.beat-context{background:rgba(240,162,107,.06);border:1px solid rgba(240,162,107,.15);border-radius:6px;padding:10px 14px;margin-bottom:16px;display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.bc-prev,.bc-next{font-size:11px;color:var(--faint)}
+.bc-next{text-align:right}
+.bc-cur{text-align:center}
+.bc-cur .bc-cur-pct{font-family:var(--mono);font-size:10px;color:var(--accent)}
+.bc-cur .bc-cur-name{font-size:13px;font-weight:600;color:var(--ink);margin-top:2px}
+.bc-arrow{color:var(--border2);font-size:10px}
 
-/* Choice point card */
-.cp-card { background: var(--s2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
-.cp-card .cp-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-.cp-source-author { font-size: 10px; color: var(--ok); border: 1px solid var(--ok); border-radius: 3px; padding: 1px 6px; }
-.cp-source-ai     { font-size: 10px; color: var(--warn); border: 1px solid var(--warn); border-radius: 3px; padding: 1px 6px; }
-.cp-card .cp-hint { font-size: 12px; color: var(--ink); margin-bottom: 5px; }
-.cp-card .cp-options { display: flex; flex-direction: column; gap: 3px; }
-.cp-card .cp-opt { font-size: 11px; color: var(--dim); display: flex; gap: 6px; }
-.cp-card .cp-opt .opt-text { color: var(--ink); }
-.cp-card .cp-opt .opt-eff { font-family: var(--mono); color: var(--accent); }
-.cp-actions { display: flex; gap: 6px; margin-top: 8px; }
+/* Graph */
+.graph-toolbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--s1);flex-shrink:0}
+.graph-toolbar .gt-label{font-size:11px;color:var(--faint);font-family:var(--mono)}
+#drawflow-container{flex:1;position:relative;background:var(--bg);background-image:radial-gradient(rgba(240,162,107,.05) 1px,transparent 1px);background-size:26px 26px}
+.drawflow .connection .main-path{stroke:var(--accent);stroke-width:2px}
+.drawflow-node{background:var(--s2);border:1px solid var(--border);border-radius:6px;min-width:160px}
+.drawflow-node.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(240,162,107,.2)}
+.drawflow-node .input,.drawflow-node .output{background:var(--accent);border:2px solid var(--bg);width:11px;height:11px;border-radius:50%}
+.dn-card{padding:8px 10px}
+.dn-card .dn-label{font-family:var(--mono);font-size:9px;color:var(--faint);text-transform:uppercase;margin-bottom:2px}
+.dn-card .dn-name{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px;word-break:break-all}
+.dn-card .dn-preview{font-size:11px;color:var(--dim);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* Skeleton box */
-.skeleton-box { background: var(--s2); border: 1px solid var(--border); border-radius: 6px; padding: 14px; min-height: 120px; font-family: var(--mono); font-size: 12px; color: var(--dim); line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
-.skeleton-placeholder { color: var(--faint); font-style: italic; font-family: var(--sans); }
-
-/* Foreshadow list */
-.foreshadow-list { display: flex; flex-direction: column; gap: 4px; }
-.foreshadow-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-.foreshadow-item input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; }
-.foreshadow-item .fi-text { flex: 1; color: var(--dim); }
-.foreshadow-item .fi-origin { font-family: var(--mono); font-size: 10px; color: var(--faint); }
-
-/* State display */
-.state-display { display: flex; flex-wrap: wrap; gap: 6px; }
-.state-chip { background: var(--s3); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-family: var(--mono); font-size: 11px; }
-.state-chip .sk { color: var(--faint); }
-.state-chip .sv { color: var(--ink); }
-
-/* Graph toolbar */
-.graph-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--s1); flex-shrink: 0; }
-.graph-toolbar .gt-label { font-size: 11px; color: var(--faint); font-family: var(--mono); }
-#drawflow-container { flex: 1; position: relative; background: var(--bg); background-image: radial-gradient(rgba(240,162,107,.05) 1px, transparent 1px); background-size: 26px 26px; }
-.drawflow .connection .main-path { stroke: var(--accent); stroke-width: 2px; }
-.drawflow-node { background: var(--s2); border: 1px solid var(--border); border-radius: 6px; min-width: 160px; }
-.drawflow-node.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(240,162,107,.2); }
-.drawflow-node .input, .drawflow-node .output { background: var(--accent); border: 2px solid var(--bg); width: 11px; height: 11px; border-radius: 50%; }
-.dn-card { padding: 8px 10px; }
-.dn-card .dn-label { font-family: var(--mono); font-size: 9px; color: var(--faint); text-transform: uppercase; margin-bottom: 2px; }
-.dn-card .dn-name { font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 4px; word-break: break-all; }
-.dn-card .dn-preview { font-size: 11px; color: var(--dim); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* ---- Right AI Panel ---- */
-.ai-panel {
-  width: var(--ai-w); flex-shrink: 0;
-  border-left: 1px solid var(--border);
-  background: var(--s1);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-.ai-panel-head {
-  padding: 10px 12px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-}
-.ai-panel-head .aph-title { font-weight: 600; font-size: 12px; }
-.ai-panel-head .aph-mode { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--faint); }
-.ai-panel-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-.ai-panel-body::-webkit-scrollbar { width: 4px; }
-.ai-panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-/* AI config section */
-.ai-config { padding: 10px 12px; border-bottom: 1px solid var(--border); }
-.ai-config.collapsed .ai-config-fields { display: none; }
-.ai-config-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 11px; color: var(--faint); user-select: none; }
-.ai-config-toggle:hover { color: var(--dim); }
-.ai-config-fields { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-.ai-config-fields label { font-size: 10px; color: var(--faint); display: block; margin-bottom: 2px; }
-.ai-config-fields input, .ai-config-fields select { font-size: 11px; padding: 5px 8px; }
-.ai-status { font-family: var(--mono); font-size: 10px; margin-top: 6px; padding: 3px 6px; border-radius: 3px; }
-.ai-status.ok  { background: rgba(156,216,166,.1); color: var(--ok); }
-.ai-status.err { background: rgba(239,138,138,.1); color: var(--err); }
-
-/* AI mode panels */
-.ai-mode { display: none; flex-direction: column; flex: 1; }
-.ai-mode.active { display: flex; }
-.ai-mode-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-.ai-mode-title { font-size: 11px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
-.ai-hint { font-size: 11px; color: var(--faint); line-height: 1.6; }
-.ai-action-btn { width: 100%; justify-content: center; font-size: 12px; padding: 7px; }
-
-/* AI output area */
-.ai-output { flex: 1; background: var(--s2); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: var(--mono); font-size: 11px; color: var(--dim); line-height: 1.7; min-height: 100px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
-.ai-output .ai-placeholder { color: var(--faint); font-style: italic; font-family: var(--sans); font-size: 11px; }
-.ai-output-actions { display: flex; gap: 6px; margin-top: 8px; }
-.ai-output-actions .btn { flex: 1; justify-content: center; font-size: 11px; }
-
-/* Extra instruction textarea */
-.extra-instr { font-size: 11px; padding: 6px 8px; resize: vertical; min-height: 50px; }
+/* AI Panel */
+.ai-panel{width:var(--ai-w);flex-shrink:0;border-left:1px solid var(--border);background:var(--s1);display:flex;flex-direction:column;overflow:hidden}
+.ai-panel-head{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.ai-panel-head .aph-title{font-weight:600;font-size:12px}
+.ai-panel-head .aph-mode{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint)}
+.ai-panel-body{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.ai-panel-body::-webkit-scrollbar{width:4px}
+.ai-panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.ai-config{padding:10px 12px;border-bottom:1px solid var(--border)}
+.ai-config.collapsed .ai-config-fields{display:none}
+.ai-config-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:11px;color:var(--faint);user-select:none}
+.ai-config-toggle:hover{color:var(--dim)}
+.ai-config-fields{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.ai-config-fields label{font-size:10px;color:var(--faint);display:block;margin-bottom:2px}
+.ai-config-fields input,.ai-config-fields select{font-size:11px;padding:5px 8px}
+.ai-status{font-family:var(--mono);font-size:10px;margin-top:6px;padding:3px 6px;border-radius:3px}
+.ai-status.ok{background:rgba(156,216,166,.1);color:var(--ok)}
+.ai-status.err{background:rgba(239,138,138,.1);color:var(--err)}
+.ai-mode{display:none;flex-direction:column;flex:1}
+.ai-mode.active{display:flex}
+.ai-mode-body{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1}
+.ai-mode-title{font-size:11px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.ai-hint{font-size:11px;color:var(--faint);line-height:1.6}
+.ai-action-btn{width:100%;justify-content:center;font-size:12px;padding:7px}
+.ai-output{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.7;min-height:100px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.ai-output .ai-placeholder{color:var(--faint);font-style:italic;font-family:var(--sans);font-size:11px}
+.ai-output-actions{display:flex;gap:6px;margin-top:8px}
+.ai-output-actions .btn{flex:1;justify-content:center;font-size:11px}
+.extra-instr{font-size:11px;padding:6px 8px;resize:vertical;min-height:50px}
 
 /* Misc */
-.divider { height: 1px; background: var(--border); margin: 8px 0; }
-.row { display: flex; gap: 8px; align-items: center; }
-.empty-hint { color: var(--faint); font-size: 12px; text-align: center; padding: 30px 16px; line-height: 1.7; }
-.badge { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-family: var(--mono); }
-.badge-warn { background: rgba(240,208,128,.1); color: var(--warn); border: 1px solid rgba(240,208,128,.2); }
-.badge-ok   { background: rgba(156,216,166,.1); color: var(--ok);   border: 1px solid rgba(156,216,166,.2); }
+.divider{height:1px;background:var(--border);margin:8px 0}
+.row{display:flex;gap:8px;align-items:center}
+.empty-hint{color:var(--faint);font-size:12px;text-align:center;padding:30px 16px;line-height:1.7}
+.badge{font-size:10px;padding:2px 6px;border-radius:3px;font-family:var(--mono)}
+.badge-warn{background:rgba(240,208,128,.1);color:var(--warn);border:1px solid rgba(240,208,128,.2)}
+.badge-ok{background:rgba(156,216,166,.1);color:var(--ok);border:1px solid rgba(156,216,166,.2)}
 </style>
 </head>
 <body>
 <div class="app">
 
-<!-- ======== Toolbar ======== -->
+<!-- Toolbar -->
 <div class="toolbar">
   <span class="brand">◆ VN Studio</span>
   <div class="sep"></div>
@@ -296,10 +225,9 @@ select option { background: var(--s2); }
   <span class="project-name" id="project-name">未命名项目</span>
 </div>
 
-<!-- ======== Workspace ======== -->
 <div class="workspace">
 
-  <!-- ==== Left Sidebar ==== -->
+  <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-head">
       <div class="sh-title" id="sb-title">故事结构</div>
@@ -308,15 +236,16 @@ select option { background: var(--s2); }
     <div class="sidebar-body" id="sidebar-body">
       <div class="empty-hint">新建项目<br/>或载入 .vnproject 文件</div>
     </div>
-    <div class="sidebar-foot">
-      <button class="btn" id="btn-add-block" style="width:100%;justify-content:center">＋ 新建场景块</button>
+    <div class="sidebar-foot" style="display:flex;flex-direction:column;gap:6px">
+      <button class="btn" id="btn-set-branching" style="width:100%;justify-content:center;font-size:11px">◆ 设为分叉点</button>
     </div>
   </div>
 
-  <!-- ==== Center ==== -->
+  <!-- Center -->
   <div class="center">
     <div class="tab-bar">
       <button class="tab active" data-tab="bible">📖 全文</button>
+      <button class="tab" data-tab="beatsheet">📋 节拍表</button>
       <button class="tab" data-tab="block" id="tab-block" disabled>🧩 块详情</button>
       <button class="tab" data-tab="graph" id="tab-graph" disabled>🔗 节点图</button>
     </div>
@@ -329,10 +258,17 @@ select option { background: var(--s2); }
         </div>
       </div>
 
+      <!-- L2: Beat Sheet -->
+      <div class="tab-pane" id="pane-beatsheet">
+        <div id="beatsheet-view">
+          <div class="empty-hint" style="padding-top:60px">新建或载入项目后查看节拍表</div>
+        </div>
+      </div>
+
       <!-- L3: Block Detail -->
       <div class="tab-pane" id="pane-block">
         <div id="block-detail">
-          <div class="empty-hint">从左侧选择一个场景块</div>
+          <div class="empty-hint">从节拍表或侧边栏选择一个节拍块</div>
         </div>
       </div>
 
@@ -350,51 +286,41 @@ select option { background: var(--s2); }
     </div>
   </div>
 
-  <!-- ==== Right AI Panel ==== -->
+  <!-- AI Panel -->
   <div class="ai-panel">
     <div class="ai-panel-head">
       <span class="aph-title">🤖 AI 助手</span>
       <span class="aph-mode" id="ai-mode-label">未选择层级</span>
     </div>
     <div class="ai-panel-body">
-
-      <!-- Config section -->
       <div class="ai-config" id="ai-config">
         <div class="ai-config-toggle" id="ai-config-toggle">
           <span>⚙ API 配置</span>
           <span id="ai-config-arrow">▼</span>
         </div>
         <div class="ai-config-fields" id="ai-config-fields">
-          <div>
-            <label>API Key</label>
-            <input type="password" id="cfg-key" placeholder="sk-..." autocomplete="off"/>
-          </div>
-          <div>
-            <label>Endpoint（Base URL）</label>
-            <input type="text" id="cfg-url" placeholder="https://api.deepseek.com/v1"/>
-          </div>
-          <div>
-            <label>模型</label>
-            <input type="text" id="cfg-model" placeholder="deepseek-chat"/>
-          </div>
+          <div><label>API Key</label><input type="password" id="cfg-key" placeholder="sk-..." autocomplete="off"/></div>
+          <div><label>Endpoint（Base URL）</label><input type="text" id="cfg-url" placeholder="https://api.deepseek.com/v1"/></div>
+          <div><label>模型</label><input type="text" id="cfg-model" placeholder="deepseek-chat"/></div>
           <button class="btn ok-btn" id="cfg-save" style="width:100%;justify-content:center">保存配置</button>
           <div id="ai-status" class="ai-status" style="display:none"></div>
         </div>
       </div>
 
-      <!-- Mode: idle -->
+      <!-- idle -->
       <div class="ai-mode active" id="mode-idle">
         <div class="ai-mode-body">
           <div class="ai-hint">
             选择一个层级开始创作：<br/><br/>
             <b>📖 全文</b> → 校验 Story Bible<br/>
+            <b>📋 节拍表</b> → 生成完整节拍结构<br/>
             <b>🧩 块详情</b> → 生成骨架 + 建议选择点<br/>
             <b>🔗 节点图</b> → 生成场景台词/旁白
           </div>
         </div>
       </div>
 
-      <!-- Mode: bible (L1) -->
+      <!-- bible (L1) -->
       <div class="ai-mode" id="mode-bible">
         <div class="ai-mode-body">
           <div class="ai-mode-title">Story Bible 分析</div>
@@ -402,13 +328,22 @@ select option { background: var(--s2); }
           <button class="btn accent ai-action-btn" id="ai-validate-bible">检查一致性</button>
           <div class="divider"></div>
           <div class="ai-mode-title">输出</div>
-          <div class="ai-output" id="ai-out-bible">
-            <span class="ai-placeholder">点击「检查一致性」开始分析…</span>
-          </div>
+          <div class="ai-output" id="ai-out-bible"><span class="ai-placeholder">点击「检查一致性」开始分析…</span></div>
         </div>
       </div>
 
-      <!-- Mode: block (L3) -->
+      <!-- beatsheet (L2) -->
+      <div class="ai-mode" id="mode-beatsheet">
+        <div class="ai-mode-body">
+          <div class="ai-mode-title">节拍分析</div>
+          <div class="ai-hint">AI 将根据 Story Bible 检查各节拍的逻辑衔接和情绪过渡。</div>
+          <button class="btn accent ai-action-btn" id="ai-check-beats">检查节拍衔接</button>
+          <div class="divider"></div>
+          <div class="ai-output" id="ai-out-beats"><span class="ai-placeholder">点击「检查节拍衔接」…</span></div>
+        </div>
+      </div>
+
+      <!-- block (L3) -->
       <div class="ai-mode" id="mode-block">
         <div class="ai-mode-body">
           <div class="ai-mode-title">生成块骨架</div>
@@ -419,9 +354,7 @@ select option { background: var(--s2); }
           <button class="btn accent ai-action-btn" id="ai-gen-skeleton">生成骨架</button>
           <div class="divider"></div>
           <div class="ai-mode-title">骨架输出</div>
-          <div class="ai-output" id="ai-out-skeleton">
-            <span class="ai-placeholder">点击「生成骨架」…</span>
-          </div>
+          <div class="ai-output" id="ai-out-skeleton"><span class="ai-placeholder">点击「生成骨架」…</span></div>
           <div class="ai-output-actions" id="ai-skeleton-actions" style="display:none">
             <button class="btn ok-btn" id="ai-apply-skeleton">应用到块</button>
             <button class="btn" id="ai-regen-skeleton">重新生成</button>
@@ -433,7 +366,7 @@ select option { background: var(--s2); }
         </div>
       </div>
 
-      <!-- Mode: scene (L4) -->
+      <!-- scene (L4) -->
       <div class="ai-mode" id="mode-scene">
         <div class="ai-mode-body">
           <div class="ai-mode-title">场景生成</div>
@@ -445,20 +378,13 @@ select option { background: var(--s2); }
           <div>
             <label style="font-size:10px;color:var(--faint);display:block;margin-bottom:3px">情绪强度</label>
             <select id="scene-emotion">
-              <option value="平静">平静</option>
-              <option value="疑惑">疑惑</option>
-              <option value="紧张">紧张</option>
-              <option value="震惊">震惊</option>
-              <option value="愤怒">愤怒</option>
-              <option value="悲伤">悲伤</option>
-              <option value="喜悦">喜悦</option>
+              <option>平静</option><option>疑惑</option><option>紧张</option>
+              <option>震惊</option><option>愤怒</option><option>悲伤</option><option>喜悦</option>
             </select>
           </div>
           <button class="btn accent ai-action-btn" id="ai-gen-scene" disabled>生成台词/旁白</button>
           <div class="divider"></div>
-          <div class="ai-output" id="ai-out-scene">
-            <span class="ai-placeholder">选中节点后生成…</span>
-          </div>
+          <div class="ai-output" id="ai-out-scene"><span class="ai-placeholder">选中节点后生成…</span></div>
           <div class="ai-output-actions" id="ai-scene-actions" style="display:none">
             <button class="btn ok-btn" id="ai-insert-scene">插入场景</button>
             <button class="btn" id="ai-regen-scene">重新生成</button>
@@ -466,11 +392,11 @@ select option { background: var(--s2); }
         </div>
       </div>
 
-    </div><!-- ai-panel-body -->
-  </div><!-- ai-panel -->
+    </div>
+  </div>
 
-</div><!-- workspace -->
-</div><!-- app -->
+</div>
+</div>
 
 <script src="engine.js"></script>
 <script src="ai.js"></script>
@@ -479,7 +405,63 @@ select option { background: var(--s2); }
 'use strict';
 
 // ================================================================
-// STORE — project data management
+// BEAT TEMPLATES
+// ================================================================
+
+const BEAT_TEMPLATES = {
+  save_the_cat: {
+    name: 'Save the Cat（15节拍）',
+    beats: [
+      { id:'opening_image',  name:'开场画面',      pct:1,   desc:'一个开场快照，反映故事初始世界' },
+      { id:'theme_stated',   name:'主题陈述',      pct:5,   desc:'介绍故事的中心主题或教训' },
+      { id:'setup',          name:'设定',          pct:10,  desc:'介绍英雄和"普通世界"' },
+      { id:'catalyst',       name:'催化剂',        pct:12,  desc:'发生了一些事情，使故事开始发展' },
+      { id:'debate',         name:'辩论',          pct:18,  desc:'英雄对采取行动感到犹豫不决' },
+      { id:'break_into_two', name:'第二幕开启',    pct:25,  desc:'英雄接受了挑战' },
+      { id:'b_story',        name:'B故事',         pct:30,  desc:'子情节启动，介绍帮助英雄转型的人物' },
+      { id:'fun_games',      name:'趣味和游戏',    pct:42,  desc:'英雄在挑战的"愉快"进程中' },
+      { id:'midpoint',       name:'中点',          pct:55,  desc:'筹码提高' },
+      { id:'bad_guys_close', name:'坏人逼近',      pct:65,  desc:'情况开始走下坡路' },
+      { id:'all_is_lost',    name:'一切都完了',    pct:75,  desc:'事情变得越来越糟，英雄跌入谷底' },
+      { id:'dark_night',     name:'灵魂的至暗时刻', pct:80, desc:'面对失败，英雄考虑损失和原因' },
+      { id:'break_into_three',name:'第三幕开启',   pct:85,  desc:'主人公意识到一直在逃避的真相' },
+      { id:'finale',         name:'结尾',          pct:95,  desc:'将新认识付诸行动，英雄征服了坏人' },
+      { id:'final_image',    name:'最终画面',      pct:110, desc:'反映或对比开头画面的快照' },
+    ],
+  },
+  three_act: {
+    name: '好莱坞三幕式（7节拍）',
+    beats: [
+      { id:'setup',        name:'建置',      pct:10, desc:'引入世界、主角和核心冲突' },
+      { id:'incident',     name:'引发事件',  pct:25, desc:'打破平衡的关键事件' },
+      { id:'rising',       name:'上升动作',  pct:40, desc:'主角积极应对冲突' },
+      { id:'midpoint',     name:'中点转折',  pct:55, desc:'情势逆转，筹码升高' },
+      { id:'crisis',       name:'危机深化',  pct:70, desc:'主角面临最大考验' },
+      { id:'climax',       name:'高潮',      pct:85, desc:'故事的最终对决' },
+      { id:'resolution',   name:'结局',      pct:95, desc:'冲突解决，新秩序建立' },
+    ],
+  },
+  hero_journey: {
+    name: '英雄之旅（12阶段）',
+    beats: [
+      { id:'ordinary_world',  name:'普通世界',       pct:5,  desc:'英雄的日常生活' },
+      { id:'call_adventure',  name:'冒险召唤',       pct:10, desc:'英雄收到进入特殊世界的邀请' },
+      { id:'refusal',         name:'拒绝召唤',       pct:18, desc:'英雄犹豫或拒绝' },
+      { id:'mentor',          name:'遇见导师',       pct:22, desc:'英雄遇到给予帮助的智者' },
+      { id:'crossing',        name:'跨越门槛',       pct:25, desc:'英雄进入特殊世界' },
+      { id:'tests',           name:'考验与盟友',     pct:40, desc:'英雄在特殊世界面对挑战' },
+      { id:'innermost_cave',  name:'接近洞穴',       pct:55, desc:'英雄准备面对最大挑战' },
+      { id:'ordeal',          name:'磨难',           pct:65, desc:'英雄面临生死考验' },
+      { id:'reward',          name:'奖励',           pct:75, desc:'英雄获得了他所寻求的东西' },
+      { id:'road_back',       name:'回归之路',       pct:85, desc:'英雄面临更大的挑战' },
+      { id:'resurrection',    name:'复活',           pct:92, desc:'英雄面临最终考验' },
+      { id:'return',          name:'携珍宝归来',     pct:98, desc:'英雄回归，带来了改变' },
+    ],
+  },
+};
+
+// ================================================================
+// STORE
 // ================================================================
 
 const STORE_KEY = 'vnproject';
@@ -489,59 +471,49 @@ function emptyProject() {
   return {
     title: '未命名项目',
     story_bible: {
-      opening: '',
-      world: { setting: '', rules: '', tone: '' },
-      protagonist: { name: '', personality: [], motivation: '', flaw: '' },
-      variables: [],
-      endings: [],
-      target_words: 200000,
-      block_count: 10,
+      opening: '', world: { setting:'', rules:'', tone:'' },
+      protagonist: { name:'', personality:[], motivation:'', flaw:'' },
+      variables: [], endings: [], target_words: 200000,
     },
     structure: {
-      template: 'three_act',
-      branching_point: null,
+      template: 'save_the_cat',
+      beats: [],           // [{id, name, pct, desc, block_id}]
+      branching_beat_id: null,
     },
-    blocks: [],
+    blocks: [],            // [{id, beat_id, title, status, word_target, design, skeleton, output_state}]
     scenes: {},
   };
 }
 
-function defaultBlocks() {
-  const acts = [
-    { act: 'first',             label: '第一幕',    titles: ['引入世界与角色', '初次遭遇冲突'] },
-    { act: 'second_first_half', label: '第二幕前半', titles: ['升级障碍', '尝试与失败', '盟友的考验'] },
-    { act: 'midpoint',          label: '中点',      titles: ['关键转折'] },
-    { act: 'second_last_half',  label: '第二幕后半', titles: ['黑暗时刻', '最低谷'] },
-    { act: 'third',             label: '第三幕',    titles: ['最终对决', '结局'] },
-  ];
-  const blocks = [];
-  let n = 1;
-  for (const a of acts) {
-    for (const title of a.titles) {
-      blocks.push({
-        id: `block_${n}`, title, act: a.act, status: 'draft',
-        word_target: 20000,
-        design: {
-          purpose: '', emotion_curve: [], input_state: { location: '', variables: {} },
-          foreshadow_collect: [], foreshadow_plant: [],
-          choice_points: [], outcomes: [],
-        },
-        skeleton: '', output_state: {},
-      });
-      n++;
-    }
-  }
-  return blocks;
+function beatsForTemplate(templateKey) {
+  const tpl = BEAT_TEMPLATES[templateKey] || BEAT_TEMPLATES.save_the_cat;
+  return tpl.beats.map(b => ({ ...b, block_id: null }));
+}
+
+function generateBlocksFromBeats(beats, totalWords) {
+  const wordPerBlock = Math.round((totalWords || 200000) / beats.length);
+  return beats.map((beat, i) => {
+    const blockId = 'block_' + (i + 1);
+    beat.block_id = blockId;
+    return {
+      id: blockId, beat_id: beat.id, title: beat.name,
+      status: 'draft', word_target: wordPerBlock,
+      design: {
+        purpose: beat.desc,
+        emotion_curve: [], input_state: { location:'', variables:{} },
+        foreshadow_collect: [], foreshadow_plant: [],
+        choice_points: [], outcomes: [],
+      },
+      skeleton: '', output_state: {},
+    };
+  });
 }
 
 const Store = {
   project: emptyProject(),
 
   load() {
-    try {
-      const s = localStorage.getItem(STORE_KEY);
-      if (s) this.project = JSON.parse(s);
-    } catch {}
+    try { const s = localStorage.getItem(STORE_KEY); if (s) this.project = JSON.parse(s); } catch {}
     return this;
   },
 
@@ -551,36 +523,32 @@ const Store = {
 
   getBlock(id) { return this.project.blocks.find(b => b.id === id) || null; },
 
-  addBlock(title = '新场景块') {
-    const n = this.project.blocks.length + 1;
-    const block = {
-      id: `block_${n}_${Date.now()}`, title, act: 'second_first_half', status: 'draft',
-      word_target: 20000,
-      design: {
-        purpose: '', emotion_curve: [], input_state: { location: '', variables: {} },
-        foreshadow_collect: [], foreshadow_plant: [], choice_points: [], outcomes: [],
-      },
-      skeleton: '', output_state: {},
-    };
-    this.project.blocks.push(block);
-    this.save();
-    return block;
+  getBeatForBlock(blockId) {
+    return this.project.structure.beats.find(b => b.block_id === blockId) || null;
   },
 
-  exportDTL() {
-    return Object.values(this.project.scenes).join('\n\n');
+  getPrevNextBeats(beatId) {
+    const beats = this.project.structure.beats;
+    const idx = beats.findIndex(b => b.id === beatId);
+    return {
+      prev: idx > 0 ? beats[idx - 1] : null,
+      cur:  beats[idx] || null,
+      next: idx < beats.length - 1 ? beats[idx + 1] : null,
+    };
   },
+
+  exportDTL() { return Object.values(this.project.scenes).join('\n\n'); },
 };
 
 // ================================================================
-// STATE — UI state
+// UI STATE
 // ================================================================
 
 const UI = {
   selectedBlockId: null,
   currentTab: 'bible',
-  dfEditor: null,         // Drawflow instance
-  dfNodeByScene: {},      // sceneName -> drawflow node id
+  dfEditor: null,
+  dfNodeByScene: {},
   selectedSceneNode: null,
   aiAbortCtrl: null,
 };
@@ -588,21 +556,14 @@ const UI = {
 const $ = id => document.getElementById(id);
 
 // ================================================================
-// SIDEBAR — block list
+// SIDEBAR
 // ================================================================
 
-const ACT_LABELS = {
-  first:             '第一幕',
-  second_first_half: '第二幕前半',
-  midpoint:          '中点',
-  second_last_half:  '第二幕后半',
-  third:             '第三幕',
-};
 const STATUS_INFO = {
-  draft:    { cls: 'status-draft',    text: '草稿' },
-  designed: { cls: 'status-designed', text: '已设计' },
-  skeleton: { cls: 'status-skeleton', text: '骨架完成' },
-  complete: { cls: 'status-complete', text: '✓ 完成' },
+  draft:    { cls:'status-draft',    text:'草稿' },
+  designed: { cls:'status-designed', text:'已设计' },
+  skeleton: { cls:'status-skeleton', text:'骨架完成' },
+  complete: { cls:'status-complete', text:'✓ 完成' },
 };
 
 function renderSidebar() {
@@ -613,25 +574,19 @@ function renderSidebar() {
 
   const body = $('sidebar-body');
   body.innerHTML = '';
-
   if (!proj.blocks.length) {
-    body.innerHTML = '<div class="empty-hint">点击「新建场景块」<br/>开始规划剧情结构</div>';
+    body.innerHTML = '<div class="empty-hint">新建项目后<br/>自动生成节拍结构</div>';
     return;
   }
 
-  const bpBlockId = proj.structure.branching_point?.block_id;
-  let lastAct = null;
+  const bpBeatId = proj.structure.branching_beat_id;
+  const beats = proj.structure.beats;
 
-  for (const block of proj.blocks) {
-    if (block.act !== lastAct) {
-      lastAct = block.act;
-      const ah = document.createElement('div');
-      ah.className = 'act-header';
-      ah.textContent = ACT_LABELS[block.act] || block.act;
-      body.appendChild(ah);
-    }
+  for (const beat of beats) {
+    const block = proj.blocks.find(b => b.id === beat.block_id);
+    if (!block) continue;
 
-    if (bpBlockId === block.id) {
+    if (bpBeatId === beat.id) {
       const bm = document.createElement('div');
       bm.className = 'branching-marker';
       bm.innerHTML = '◆ 分叉点 · 结局路由';
@@ -640,11 +595,11 @@ function renderSidebar() {
 
     const si = STATUS_INFO[block.status] || STATUS_INFO.draft;
     const card = document.createElement('button');
-    card.className = 'block-card' + (block.id === UI.selectedBlockId ? ' selected' : '');
+    card.className = 'beat-card' + (block.id === UI.selectedBlockId ? ' selected' : '');
     card.dataset.id = block.id;
     card.innerHTML = `
+      <div class="bc-beat">${escHtml(beat.name)}  ${beat.pct}%</div>
       <div class="bc-title">${escHtml(block.title)}</div>
-      <div class="bc-meta">${(block.word_target/10000).toFixed(0)}万字</div>
       <div class="bc-status ${si.cls}">● ${si.text}</div>`;
     card.onclick = () => selectBlock(block.id);
     body.appendChild(card);
@@ -652,7 +607,7 @@ function renderSidebar() {
 }
 
 // ================================================================
-// STORY BIBLE FORM (L1)
+// L1: STORY BIBLE FORM
 // ================================================================
 
 function renderBibleForm() {
@@ -662,45 +617,45 @@ function renderBibleForm() {
     <div class="section">
       <div class="section-title">基本信息</div>
       <div class="field"><label>项目标题</label><input type="text" id="f-title" value="${escAttr(Store.project.title)}"/></div>
-      <div class="field"><label>故事开场（第一幕第一个场景的世界状态）</label><textarea id="f-opening" rows="3">${escHtml(b.opening)}</textarea></div>
+      <div class="field"><label>故事开场</label><textarea id="f-opening" rows="3">${escHtml(b.opening)}</textarea></div>
     </div>
     <div class="section">
       <div class="section-title">世界观</div>
-      <div class="field"><label>背景设定</label><input type="text" id="f-setting" value="${escAttr(b.world?.setting || '')}"/></div>
-      <div class="field"><label>世界规则（转会制度、赛季规律等）</label><input type="text" id="f-rules" value="${escAttr(b.world?.rules || '')}"/></div>
-      <div class="field"><label>故事基调</label><input type="text" id="f-tone" value="${escAttr(b.world?.tone || '')}"/></div>
+      <div class="field"><label>背景设定</label><input type="text" id="f-setting" value="${escAttr(b.world?.setting||'')}"/></div>
+      <div class="field"><label>世界规则</label><input type="text" id="f-rules" value="${escAttr(b.world?.rules||'')}"/></div>
+      <div class="field"><label>故事基调</label><input type="text" id="f-tone" value="${escAttr(b.world?.tone||'')}"/></div>
     </div>
     <div class="section">
       <div class="section-title">主角</div>
-      <div class="field"><label>姓名</label><input type="text" id="f-pname" value="${escAttr(b.protagonist?.name || '')}"/></div>
-      <div class="field"><label>性格特点（回车添加）</label>${renderTagInput('f-personality', b.protagonist?.personality || [])}</div>
-      <div class="field"><label>核心动机</label><input type="text" id="f-motivation" value="${escAttr(b.protagonist?.motivation || '')}"/></div>
-      <div class="field"><label>核心缺陷</label><input type="text" id="f-flaw" value="${escAttr(b.protagonist?.flaw || '')}"/></div>
+      <div class="field"><label>姓名</label><input type="text" id="f-pname" value="${escAttr(b.protagonist?.name||'')}"/></div>
+      <div class="field"><label>性格特点（回车添加）</label>${renderTagInput('f-personality', b.protagonist?.personality||[])}</div>
+      <div class="field"><label>核心动机</label><input type="text" id="f-motivation" value="${escAttr(b.protagonist?.motivation||'')}"/></div>
+      <div class="field"><label>核心缺陷</label><input type="text" id="f-flaw" value="${escAttr(b.protagonist?.flaw||'')}"/></div>
     </div>
     <div class="section">
       <div class="section-title">核心变量</div>
-      <div id="var-list">${renderVarList(b.variables || [])}</div>
+      <div id="var-list">${renderVarList(b.variables||[])}</div>
       <button class="btn" id="btn-add-var" style="margin-top:4px">＋ 添加变量</button>
     </div>
     <div class="section">
       <div class="section-title">结局池</div>
-      <div id="ending-list">${renderEndingList(b.endings || [])}</div>
+      <div id="ending-list">${renderEndingList(b.endings||[])}</div>
       <button class="btn" id="btn-add-ending" style="margin-top:4px">＋ 添加结局</button>
     </div>
     <div class="section">
       <div class="section-title">规模设置</div>
       <div class="row">
-        <div class="field" style="flex:1"><label>总字数</label><input type="number" id="f-words" value="${b.target_words || 200000}" min="10000" step="10000"/></div>
-        <div class="field" style="flex:1"><label>功能块数量</label><input type="number" id="f-blocks" value="${b.block_count || 10}" min="2" max="30"/></div>
+        <div class="field" style="flex:1"><label>总字数</label><input type="number" id="f-words" value="${b.target_words||200000}" min="10000" step="10000"/></div>
       </div>
     </div>
     <button class="btn ok-btn" id="btn-save-bible" style="width:100%;justify-content:center;padding:8px">保存 Story Bible</button>
   `;
   wireTagInput('f-personality');
-  $('btn-add-var').onclick = () => addVarRow();
-  $('btn-add-ending').onclick = () => addEndingRow();
+  $('btn-add-var').onclick = addVarRow;
+  $('btn-add-ending').onclick = addEndingRow;
   $('btn-save-bible').onclick = saveBible;
   wireVarDeleteBtns();
+  wireEndingDeleteBtns();
 }
 
 function renderTagInput(id, tags) {
@@ -713,25 +668,22 @@ function renderTagInput(id, tags) {
 }
 
 function wireTagInput(id) {
-  const el = $(id);
-  if (!el) return;
+  const el = $(id); if (!el) return;
   const input = el.querySelector('input');
   el.onclick = () => input.focus();
-  input.onkeydown = (e) => {
+  input.onkeydown = e => {
     if (e.key !== 'Enter' && e.key !== ',') return;
     e.preventDefault();
-    const val = input.value.trim();
-    if (!val) return;
+    const val = input.value.trim(); if (!val) return;
     const tags = JSON.parse(el.dataset.tags || '[]');
     if (!tags.includes(val)) { tags.push(val); el.dataset.tags = JSON.stringify(tags); }
     input.value = '';
-    // re-render tags
     el.querySelectorAll('.tag').forEach(t => t.remove());
     tags.forEach(t => {
       const span = document.createElement('span');
       span.className = 'tag';
       span.innerHTML = `${escHtml(t)}<button class="tag-del" data-tag="${escAttr(t)}">×</button>`;
-      span.querySelector('.tag-del').onclick = (ev) => {
+      span.querySelector('.tag-del').onclick = ev => {
         ev.stopPropagation();
         const idx = tags.indexOf(ev.target.dataset.tag);
         if (idx >= 0) { tags.splice(idx, 1); el.dataset.tags = JSON.stringify(tags); }
@@ -741,7 +693,7 @@ function wireTagInput(id) {
     });
   };
   el.querySelectorAll('.tag-del').forEach(btn => {
-    btn.onclick = (e) => {
+    btn.onclick = e => {
       e.stopPropagation();
       const tags = JSON.parse(el.dataset.tags || '[]');
       const idx = tags.indexOf(btn.dataset.tag);
@@ -756,9 +708,9 @@ function renderVarList(vars) {
   return vars.map((v, i) => `
     <div class="var-row" data-idx="${i}">
       <input type="text" class="vr-name" placeholder="变量名" value="${escAttr(v.name)}" style="flex:2"/>
-      <input type="number" class="vr-init" placeholder="初始" value="${v.initial ?? 0}" style="flex:1"/>
-      <input type="number" class="vr-min" placeholder="最小" value="${v.min ?? 0}" style="flex:1"/>
-      <input type="number" class="vr-max" placeholder="最大" value="${v.max ?? 10}" style="flex:1"/>
+      <input type="number" class="vr-init" placeholder="初始" value="${v.initial??0}" style="flex:1"/>
+      <input type="number" class="vr-min" placeholder="最小" value="${v.min??0}" style="flex:1"/>
+      <input type="number" class="vr-max" placeholder="最大" value="${v.max??10}" style="flex:1"/>
       <button class="btn danger vr-del">×</button>
     </div>`).join('');
 }
@@ -777,20 +729,18 @@ function addVarRow() {
 }
 
 function wireVarDeleteBtns() {
-  document.querySelectorAll('.vr-del').forEach(btn => {
-    btn.onclick = () => btn.closest('.var-row').remove();
-  });
+  document.querySelectorAll('.vr-del').forEach(btn => { btn.onclick = () => btn.closest('.var-row').remove(); });
 }
 
 function renderEndingList(endings) {
   return endings.map((e, i) => `
     <div class="ending-card" data-idx="${i}">
       <div class="ec-head">
-        <span class="ec-title">${escHtml(e.title || '结局' + (i+1))}</span>
+        <span class="ec-title">${escHtml(e.title||'结局'+(i+1))}</span>
         <button class="btn danger ed-del" style="margin-left:auto;padding:2px 6px">×</button>
       </div>
-      <div class="field"><label>条件（变量表达式）</label><input type="text" class="ed-cond" value="${escAttr(e.condition || '')}" placeholder="{skill} >= 8 and {teamwork} >= 6"/></div>
-      <div class="field" style="margin:0"><label>描述</label><input type="text" class="ed-desc" value="${escAttr(e.description || '')}" placeholder="结局描述…"/></div>
+      <div class="field"><label>条件（变量表达式）</label><input type="text" class="ed-cond" value="${escAttr(e.condition||'')}" placeholder="{skill} >= 8 and {teamwork} >= 6"/></div>
+      <div class="field" style="margin:0"><label>描述</label><input type="text" class="ed-desc" value="${escAttr(e.description||'')}" placeholder="结局描述…"/></div>
     </div>`).join('');
 }
 
@@ -809,25 +759,19 @@ function addEndingRow() {
 }
 
 function wireEndingDeleteBtns() {
-  document.querySelectorAll('.ed-del').forEach(btn => {
-    btn.onclick = () => btn.closest('.ending-card').remove();
-  });
+  document.querySelectorAll('.ed-del').forEach(btn => { btn.onclick = () => btn.closest('.ending-card').remove(); });
 }
 
 function saveBible() {
   const p = Store.project;
   p.title = $('f-title').value.trim() || '未命名项目';
   p.story_bible.opening = $('f-opening').value;
-  p.story_bible.world = {
-    setting: $('f-setting').value,
-    rules:   $('f-rules').value,
-    tone:    $('f-tone').value,
-  };
+  p.story_bible.world = { setting:$('f-setting').value, rules:$('f-rules').value, tone:$('f-tone').value };
   p.story_bible.protagonist = {
-    name:        $('f-pname').value,
+    name: $('f-pname').value,
     personality: JSON.parse($('f-personality').dataset.tags || '[]'),
-    motivation:  $('f-motivation').value,
-    flaw:        $('f-flaw').value,
+    motivation: $('f-motivation').value,
+    flaw: $('f-flaw').value,
   };
   p.story_bible.variables = [];
   document.querySelectorAll('.var-row').forEach(row => {
@@ -839,8 +783,8 @@ function saveBible() {
   });
   p.story_bible.endings = [];
   document.querySelectorAll('.ending-card').forEach(card => {
-    const title = (card.querySelector('.ed-title') || card.querySelector('.ec-title'))?.textContent?.trim() ||
-                  card.querySelector('input.ed-title')?.value?.trim() || '';
+    const title = card.querySelector('input.ed-title')?.value?.trim() ||
+                  card.querySelector('.ec-title')?.textContent?.trim() || '';
     p.story_bible.endings.push({
       title,
       condition: card.querySelector('.ed-cond')?.value || '',
@@ -848,56 +792,155 @@ function saveBible() {
     });
   });
   p.story_bible.target_words = +$('f-words').value || 200000;
-  p.story_bible.block_count  = +$('f-blocks').value || 10;
   Store.save();
   $('project-name').textContent = p.title;
   renderSidebar();
 }
 
 // ================================================================
-// BLOCK DETAIL FORM (L3)
+// L2: BEAT SHEET
+// ================================================================
+
+function renderBeatSheet() {
+  const proj = Store.project;
+  const tplKey = proj.structure.template || 'save_the_cat';
+  const beats = proj.structure.beats;
+  const bpBeatId = proj.structure.branching_beat_id;
+
+  // Timeline bar
+  const timelineHtml = beats.map(beat => {
+    const pct = Math.min(beat.pct, 100);
+    return `<div class="beat-timeline-bar" style="left:0;width:${pct}%;"></div>
+      <div class="beat-timeline-label" style="left:${pct}%;transform:translateX(-50%) translateY(-50%)">${beat.pct}%</div>`;
+  }).join('');
+
+  // Beat cards grid
+  const cardsHtml = beats.map(beat => {
+    const block = proj.blocks.find(b => b.id === beat.block_id);
+    const si = block ? (STATUS_INFO[block.status] || STATUS_INFO.draft) : null;
+    const isBranching = beat.id === bpBeatId;
+    const blockTitle = block ? escHtml(block.title) : '（未绑定）';
+    const statusBadge = si
+      ? `<span class="bi-status ${si.cls}" style="background:var(--s3);border:1px solid var(--border)">${si.text}</span>`
+      : '';
+    return `<div class="beat-item${isBranching?' branching-beat':''}${block&&block.id===UI.selectedBlockId?' selected':''}"
+      data-beat-id="${escAttr(beat.id)}" onclick="selectBeat('${escAttr(beat.id)}')">
+      <div class="bi-pct">${beat.pct}%</div>
+      <div class="bi-name">${escHtml(beat.name)}</div>
+      <div class="bi-desc">${escHtml(beat.desc)}</div>
+      <div class="bi-block">
+        <span class="bi-block-title">${blockTitle}</span>
+        ${statusBadge}
+      </div>
+    </div>`;
+  }).join('');
+
+  $('beatsheet-view').innerHTML = `
+    <div class="beat-sheet-header">
+      <select id="tpl-select">
+        ${Object.entries(BEAT_TEMPLATES).map(([k,v]) =>
+          `<option value="${k}" ${k===tplKey?'selected':''}>${escHtml(v.name)}</option>`
+        ).join('')}
+      </select>
+      <button class="btn accent" id="btn-apply-template">应用模板（重新生成块）</button>
+    </div>
+    <div class="beat-timeline">${timelineHtml}</div>
+    <div class="beat-grid">${cardsHtml}</div>
+  `;
+
+  $('btn-apply-template').onclick = () => {
+    const key = $('tpl-select').value;
+    if (!confirm(`切换到「${BEAT_TEMPLATES[key]?.name}」将重新生成所有节拍块，当前骨架和场景不受影响，确认？`)) return;
+    applyTemplate(key);
+  };
+}
+
+function applyTemplate(templateKey) {
+  const proj = Store.project;
+  const tpl = BEAT_TEMPLATES[templateKey];
+  if (!tpl) return;
+
+  proj.structure.template = templateKey;
+  const newBeats = beatsForTemplate(templateKey);
+  const newBlocks = generateBlocksFromBeats(newBeats, proj.story_bible.target_words);
+
+  // Preserve existing blocks' content where beat ids match
+  const oldBlocks = proj.blocks;
+  for (const nb of newBlocks) {
+    const ob = oldBlocks.find(b => b.beat_id === nb.beat_id);
+    if (ob) {
+      nb.title = ob.title;
+      nb.status = ob.status;
+      nb.design = ob.design;
+      nb.skeleton = ob.skeleton;
+      nb.output_state = ob.output_state;
+      nb.word_target = ob.word_target;
+    }
+  }
+
+  proj.structure.beats = newBeats;
+  proj.blocks = newBlocks;
+  Store.save();
+  renderSidebar();
+  renderBeatSheet();
+}
+
+function selectBeat(beatId) {
+  const beat = Store.project.structure.beats.find(b => b.id === beatId);
+  if (!beat || !beat.block_id) return;
+  selectBlock(beat.block_id);
+}
+
+// ================================================================
+// L3: BLOCK DETAIL
 // ================================================================
 
 function renderBlockDetail(block) {
   const d = block.design || {};
+  const beat = Store.getBeatForBlock(block.id);
+  const { prev, cur, next } = beat ? Store.getPrevNextBeats(beat.id) : { prev:null, cur:null, next:null };
+
+  // Beat context bar
+  const beatCtxHtml = beat ? `
+    <div class="beat-context">
+      <div class="bc-prev">${prev ? `← ${escHtml(prev.name)}<br/><span style="font-size:10px;color:var(--faint)">${prev.pct}%</span>` : '（开篇）'}</div>
+      <div class="bc-cur">
+        <div class="bc-cur-pct">${beat.pct}%</div>
+        <div class="bc-cur-name">${escHtml(beat.name)}</div>
+      </div>
+      <div class="bc-next">${next ? `${escHtml(next.name)} →<br/><span style="font-size:10px;color:var(--faint)">${next.pct}%</span>` : '（结篇）'}</div>
+    </div>` : '';
+
   const em = d.emotion_curve || [];
   const emHtml = em.length
     ? em.map((e, i) =>
-        `<span class="emotion-point">
-          <span class="ep-name">${escHtml(e[0])}</span>
-          <span class="ep-pct">${Math.round(e[1]*100)}%</span>
-        </span>${i < em.length-1 ? '<span class="emotion-arrow">→</span>' : ''}`
+        `<span class="emotion-point"><span class="ep-name">${escHtml(e[0])}</span><span class="ep-pct">${Math.round(e[1]*100)}%</span></span>${i<em.length-1?'<span class="emotion-arrow">→</span>':''}`
       ).join('')
-    : '<span style="color:var(--faint);font-size:11px">（未设定，点击编辑）</span>';
+    : '<span style="color:var(--faint);font-size:11px">（未设定）</span>';
 
-  const stateChips = Object.entries(d.input_state?.variables || {}).map(([k, v]) =>
+  const stateChips = Object.entries(d.input_state?.variables||{}).map(([k,v]) =>
     `<span class="state-chip"><span class="sk">${k}</span><span class="sv"> ${v}</span></span>`
   ).join('') || '<span style="color:var(--faint);font-size:11px">（继承自上一块）</span>';
 
-  const fcHtml = (d.foreshadow_collect || []).map(f =>
+  const fcHtml = (d.foreshadow_collect||[]).map(f =>
     `<div class="foreshadow-item"><input type="checkbox" checked disabled/><span class="fi-text">${escHtml(f)}</span></div>`
   ).join('') || '<div style="color:var(--faint);font-size:11px">无</div>';
 
-  const fpHtml = (d.foreshadow_plant || []).map(f =>
+  const fpHtml = (d.foreshadow_plant||[]).map(f =>
     `<div class="foreshadow-item"><input type="checkbox" disabled/><span class="fi-text">${escHtml(f)}</span></div>`
   ).join('') || '<div style="color:var(--faint);font-size:11px">无</div>';
 
-  const cpHtml = (d.choice_points || []).map(cp => renderChoicePointCard(cp)).join('');
+  const cpHtml = (d.choice_points||[]).map(cp => renderChoicePointCard(cp)).join('');
 
   const skeletonContent = block.skeleton
     ? escHtml(block.skeleton)
     : '<span class="skeleton-placeholder">骨架尚未生成——在右侧 AI 面板点击「生成骨架」</span>';
 
   $('block-detail').innerHTML = `
+    ${beatCtxHtml}
     <div class="section">
       <div class="section-title">块信息</div>
       <div class="field"><label>标题</label><input type="text" id="bd-title" value="${escAttr(block.title)}"/></div>
-      <div class="field"><label>所属幕</label>
-        <select id="bd-act">
-          ${Object.entries(ACT_LABELS).map(([k,v]) =>
-            `<option value="${k}" ${block.act===k?'selected':''}>${v}</option>`).join('')}
-        </select>
-      </div>
       <div class="field"><label>字数目标</label><input type="number" id="bd-words" value="${block.word_target||20000}" step="1000"/></div>
     </div>
     <div class="section">
@@ -946,13 +989,13 @@ function renderBlockDetail(block) {
 function renderChoicePointCard(cp) {
   const badge = cp.source === 'author'
     ? '<span class="cp-source-author">作者</span>'
-    : `<span class="cp-source-ai">AI提议</span>`;
+    : '<span class="cp-source-ai">AI提议</span>';
   const statusBtns = cp.source === 'ai' && cp.status === 'pending'
     ? `<div class="cp-actions">
          <button class="btn ok-btn cp-approve" data-hint="${escAttr(cp.position_hint)}" style="font-size:11px">批准</button>
          <button class="btn danger cp-reject" data-hint="${escAttr(cp.position_hint)}" style="font-size:11px">拒绝</button>
        </div>` : '';
-  const opts = (cp.options || []).map(o =>
+  const opts = (cp.options||[]).map(o =>
     `<div class="cp-opt"><span class="opt-text">${escHtml(o.text)}</span><span class="opt-eff">${escHtml(o.effect||'')}</span></div>`
   ).join('');
   return `<div class="cp-card">
@@ -979,28 +1022,30 @@ function wireChoicePointActions(block) {
 
 function addChoicePointRow(block) {
   block.design.choice_points.push({
-    source: 'author', position_hint: '新选择点',
-    options: [{ text: '选项A', effect: '' }, { text: '选项B', effect: '' }],
+    source:'author', position_hint:'新选择点',
+    options:[{text:'选项A',effect:''},{text:'选项B',effect:''}],
   });
   Store.save();
   renderBlockDetail(block);
 }
 
 function saveBlock(block) {
-  block.title      = $('bd-title')?.value.trim() || block.title;
-  block.act        = $('bd-act')?.value || block.act;
+  block.title = $('bd-title')?.value.trim() || block.title;
   block.word_target = +($('bd-words')?.value || 20000);
-  block.design.purpose  = $('bd-purpose')?.value || '';
+  block.design.purpose = $('bd-purpose')?.value || '';
   block.design.input_state.location = $('bd-location')?.value || '';
   block.design.outcomes = ($('bd-outcomes')?.value || '').split('\n').filter(l => l.trim());
   if (block.skeleton) block.status = 'skeleton';
   else if (block.design.purpose) block.status = 'designed';
+  // sync beat name if block title changed
+  const beat = Store.getBeatForBlock(block.id);
   Store.save();
   renderSidebar();
+  if (UI.currentTab === 'beatsheet') renderBeatSheet();
 }
 
 // ================================================================
-// NODE GRAPH (L4) — Drawflow
+// L4: NODE GRAPH
 // ================================================================
 
 function initDrawflow() {
@@ -1040,26 +1085,16 @@ function loadBlockIntoGraph(block) {
   if (!UI.dfEditor) return;
   UI.dfEditor.clearModuleSelected();
   UI.dfNodeByScene = {};
-
   $('graph-label').textContent = `节点图 · ${block.title}`;
-
-  // Collect scenes belonging to this block
   const prefix = block.id + '_';
   const blockScenes = Object.keys(Store.project.scenes).filter(k => k.startsWith(prefix));
-
   if (!blockScenes.length) return;
-
   let x = 40, y = 40;
   for (const name of blockScenes) {
-    const dtl = Store.project.scenes[name] || '';
-    const firstLine = dtl.split('\n').find(l => !l.startsWith('label') && l.trim()) || '(空)';
-    const id = addSceneNode(name, dtl, x, y);
+    const id = addSceneNode(name, Store.project.scenes[name] || '', x, y);
     UI.dfNodeByScene[name] = id;
-    x += 240;
-    if (x > 900) { x = 40; y += 180; }
+    x += 240; if (x > 900) { x = 40; y += 180; }
   }
-
-  // Draw connections
   for (const name of blockScenes) {
     const dtl = Store.project.scenes[name] || '';
     for (const m of dtl.matchAll(/^jump (\S+)/gm)) {
@@ -1072,14 +1107,14 @@ function loadBlockIntoGraph(block) {
 }
 
 function addSceneNode(name, dtl, x, y) {
-  const lines = (dtl || '').split('\n').filter(l => !l.startsWith('label') && l.trim());
+  const lines = (dtl||'').split('\n').filter(l => !l.startsWith('label') && l.trim());
   const preview = lines[0]?.slice(0, 35) || '（空场景）';
   const html = `<div class="dn-card">
     <div class="dn-label">scene</div>
     <div class="dn-name">${escHtml(name)}</div>
     <div class="dn-preview">${escHtml(preview)}</div>
   </div>`;
-  return UI.dfEditor.addNode(name, 1, 1, x, y, 'scene-node', { purpose: '', dtl }, html);
+  return UI.dfEditor.addNode(name, 1, 1, x, y, 'scene-node', { purpose:'', dtl }, html);
 }
 
 function importSkeletonAsNodes(block) {
@@ -1089,34 +1124,32 @@ function importSkeletonAsNodes(block) {
   for (const line of lines) {
     const slug = line.replace(/^\d+\.\s*/, '').slice(0, 20).trim()
       .replace(/[^a-zA-Z0-9一-龥]/g, '_').replace(/_+/g, '_');
-    const name = block.id + '_scene_' + slug;
+    const name = block.id + '_' + slug;
     if (!Store.project.scenes[name]) Store.project.scenes[name] = `label ${name}\n`;
     const id = addSceneNode(name, Store.project.scenes[name], x, y);
     UI.dfNodeByScene[name] = id;
-    x += 240;
-    if (x > 900) { x = 40; y += 180; }
+    x += 240; if (x > 900) { x = 40; y += 180; }
   }
   Store.save();
 }
 
 // ================================================================
-// TAB SWITCHING
+// TAB & SELECTION
 // ================================================================
 
 function switchTab(tab) {
   UI.currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'pane-' + tab));
-
-  // AI panel mode
-  setAiMode(tab === 'bible' ? 'bible' : tab === 'block' ? 'block' : tab === 'graph' ? 'scene' : 'idle');
+  const modeMap = { bible:'bible', beatsheet:'beatsheet', block:'block', graph:'scene' };
+  setAiMode(modeMap[tab] || 'idle');
+  if (tab === 'beatsheet') renderBeatSheet();
 }
 
 function selectBlock(id) {
   UI.selectedBlockId = id;
   const block = Store.getBlock(id);
   if (!block) return;
-
   renderSidebar();
   $('tab-block').disabled = false;
   $('tab-graph').disabled = false;
@@ -1133,19 +1166,19 @@ function setAiMode(mode) {
   document.querySelectorAll('.ai-mode').forEach(m => m.classList.remove('active'));
   const el = $('mode-' + mode);
   if (el) el.classList.add('active');
-  $('ai-mode-label').textContent = { idle:'未选择层级', bible:'全文层', block:'块详情层', scene:'节点图层' }[mode] || '';
+  const labels = { idle:'未选择层级', bible:'全文层', beatsheet:'节拍表层', block:'块详情层', scene:'节点图层' };
+  $('ai-mode-label').textContent = labels[mode] || '';
 }
 
 function aiOutput(elId, text, append = false) {
-  const el = $(elId);
-  if (!el) return;
+  const el = $(elId); if (!el) return;
   if (append) el.textContent += text;
   else { el.textContent = ''; el.appendChild(document.createTextNode(text)); }
   el.scrollTop = el.scrollHeight;
 }
 
 function abortPrevious() {
-  if (UI.aiAbortCtrl) { UI.aiAbortCtrl.abort(); }
+  if (UI.aiAbortCtrl) UI.aiAbortCtrl.abort();
   UI.aiAbortCtrl = new AbortController();
   return UI.aiAbortCtrl.signal;
 }
@@ -1158,15 +1191,34 @@ $('ai-validate-bible').onclick = async () => {
   $('ai-validate-bible').disabled = true;
   try {
     await AIClient.validateBible(Store.project.story_bible, {
-      signal,
-      onChunk: (delta) => aiOutput('ai-out-bible', delta, true),
+      signal, onChunk: delta => aiOutput('ai-out-bible', delta, true),
     });
-  } catch (e) {
-    if (e.name !== 'AbortError') aiOutput('ai-out-bible', '错误：' + e.message);
-  } finally { $('ai-validate-bible').disabled = false; }
+  } catch (e) { if (e.name !== 'AbortError') aiOutput('ai-out-bible', '错误：' + e.message); }
+  finally { $('ai-validate-bible').disabled = false; }
 };
 
-// L3: generate skeleton
+// L2: check beats
+$('ai-check-beats').onclick = async () => {
+  if (!AIClient.isConfigured()) { showAiConfigErr(); return; }
+  const signal = abortPrevious();
+  aiOutput('ai-out-beats', '');
+  $('ai-check-beats').disabled = true;
+  try {
+    const beats = Store.project.structure.beats;
+    const beatSummary = beats.map((b, i) => {
+      const block = Store.project.blocks.find(bl => bl.id === b.block_id);
+      return `${i+1}. ${b.name}（${b.pct}%）：${block?.design?.purpose || b.desc}`;
+    }).join('\n');
+    const prompt = `请分析以下视觉小说的节拍结构，检查：\n1. 相邻节拍之间的叙事衔接是否自然\n2. 情绪过渡是否合理（不能无原因跳变）\n3. 是否有冗余或缺失的关键节拍\n\n节拍列表：\n${beatSummary}\n\nStory Bible 概要：${JSON.stringify(Store.project.story_bible, null, 2)}\n\n请分点给出具体建议。`;
+    await AIClient.chat([
+      { role:'system', content:'你是资深视觉小说策划顾问，专注叙事节拍结构分析。用中文回答，简洁专业。' },
+      { role:'user', content: prompt },
+    ], { signal, onChunk: delta => aiOutput('ai-out-beats', delta, true) });
+  } catch (e) { if (e.name !== 'AbortError') aiOutput('ai-out-beats', '错误：' + e.message); }
+  finally { $('ai-check-beats').disabled = false; }
+};
+
+// L3: generate skeleton (with beat context)
 $('ai-gen-skeleton').onclick = async () => {
   const block = Store.getBlock(UI.selectedBlockId);
   if (!block) return;
@@ -1176,18 +1228,27 @@ $('ai-gen-skeleton').onclick = async () => {
   $('ai-gen-skeleton').disabled = true;
   $('ai-skeleton-actions').style.display = 'none';
   $('ai-propose-choices').disabled = true;
+
+  // Inject beat context into block before sending
+  const beat = Store.getBeatForBlock(block.id);
+  const { prev, next } = beat ? Store.getPrevNextBeats(beat.id) : { prev:null, next:null };
+  const blockWithBeatCtx = {
+    ...block,
+    _beat_context: beat ? {
+      current: `${beat.name}（${beat.pct}%）`,
+      prev: prev ? `${prev.name}（${prev.pct}%）` : '（开篇）',
+      next: next ? `${next.name}（${next.pct}%）` : '（结篇）',
+    } : null,
+  };
+
   try {
-    const extraInstr = $('ai-extra-instr').value.trim();
-    const result = await AIClient.generateSkeleton(block, Store.project.story_bible, {
-      signal,
-      onChunk: (delta) => aiOutput('ai-out-skeleton', delta, true),
+    await AIClient.generateSkeleton(blockWithBeatCtx, Store.project.story_bible, {
+      signal, onChunk: delta => aiOutput('ai-out-skeleton', delta, true),
     });
-    // Show actions
     $('ai-skeleton-actions').style.display = 'flex';
     $('ai-propose-choices').disabled = false;
-  } catch (e) {
-    if (e.name !== 'AbortError') aiOutput('ai-out-skeleton', '错误：' + e.message);
-  } finally { $('ai-gen-skeleton').disabled = false; }
+  } catch (e) { if (e.name !== 'AbortError') aiOutput('ai-out-skeleton', '错误：' + e.message); }
+  finally { $('ai-gen-skeleton').disabled = false; }
 };
 
 $('ai-apply-skeleton').onclick = () => {
@@ -1230,10 +1291,8 @@ $('ai-propose-choices').onclick = async () => {
     document.querySelectorAll('.prop-approve').forEach(btn => {
       btn.onclick = () => {
         const p = JSON.parse(btn.dataset.proposal);
-        block.design.choice_points.push({ source: 'ai', status: 'approved', ...p });
-        Store.save();
-        renderBlockDetail(block);
-        btn.closest('.cp-card').remove();
+        block.design.choice_points.push({ source:'ai', status:'approved', ...p });
+        Store.save(); renderBlockDetail(block); btn.closest('.cp-card').remove();
       };
     });
     document.querySelectorAll('.prop-reject').forEach(btn => {
@@ -1261,24 +1320,20 @@ $('ai-gen-scene').onclick = async () => {
   $('ai-scene-actions').style.display = 'none';
   try {
     await AIClient.generateScene(ctx, Store.project.story_bible, {
-      signal,
-      onChunk: (delta) => aiOutput('ai-out-scene', delta, true),
+      signal, onChunk: delta => aiOutput('ai-out-scene', delta, true),
     });
     $('ai-scene-actions').style.display = 'flex';
-  } catch (e) {
-    if (e.name !== 'AbortError') aiOutput('ai-out-scene', '错误：' + e.message);
-  } finally { $('ai-gen-scene').disabled = false; }
+  } catch (e) { if (e.name !== 'AbortError') aiOutput('ai-out-scene', '错误：' + e.message); }
+  finally { $('ai-gen-scene').disabled = false; }
 };
 
 $('ai-insert-scene').onclick = () => {
   if (!UI.selectedSceneNode) return;
   const node = UI.dfEditor.getNodeFromId(UI.selectedSceneNode);
-  const name = node?.name;
-  if (!name) return;
+  const name = node?.name; if (!name) return;
   const dtl = `label ${name}\n${$('ai-out-scene').textContent}`;
   Store.project.scenes[name] = dtl;
   Store.save();
-  // Refresh node card preview
   const el = document.querySelector(`#node-${UI.selectedSceneNode} .dn-preview`);
   if (el) el.textContent = dtl.split('\n')[1]?.slice(0, 35) || '';
 };
@@ -1296,38 +1351,36 @@ $('ai-config-toggle').onclick = () => {
 };
 
 $('cfg-save').onclick = () => {
-  AIClient.config.apiKey      = $('cfg-key').value.trim();
-  AIClient.config.baseUrl     = $('cfg-url').value.trim() || AIClient.config.baseUrl;
-  AIClient.config.model       = $('cfg-model').value.trim() || AIClient.config.model;
+  AIClient.config.apiKey  = $('cfg-key').value.trim();
+  AIClient.config.baseUrl = $('cfg-url').value.trim() || AIClient.config.baseUrl;
+  AIClient.config.model   = $('cfg-model').value.trim() || AIClient.config.model;
   AIClient.saveConfig();
   const st = $('ai-status');
   st.style.display = 'block';
   if (AIClient.isConfigured()) {
     st.className = 'ai-status ok'; st.textContent = '✓ 已配置';
-    $('ai-config').classList.add('collapsed');
-    $('ai-config-arrow').textContent = '▶';
+    $('ai-config').classList.add('collapsed'); $('ai-config-arrow').textContent = '▶';
   } else {
     st.className = 'ai-status err'; st.textContent = '请填写 API Key';
   }
 };
 
 function showAiConfigErr() {
-  $('ai-config').classList.remove('collapsed');
-  $('ai-config-arrow').textContent = '▼';
+  $('ai-config').classList.remove('collapsed'); $('ai-config-arrow').textContent = '▼';
   const st = $('ai-status');
-  st.style.display = 'block';
-  st.className = 'ai-status err';
-  st.textContent = '请先配置 API Key';
+  st.style.display = 'block'; st.className = 'ai-status err'; st.textContent = '请先配置 API Key';
 }
 
 // ================================================================
-// TOOLBAR ACTIONS
+// TOOLBAR
 // ================================================================
 
 $('btn-new-project').onclick = () => {
   if (!confirm('新建项目将清空当前内容，确认继续？')) return;
-  Store.project = emptyProject();
-  Store.project.blocks = defaultBlocks();
+  const proj = emptyProject();
+  proj.structure.beats = beatsForTemplate('save_the_cat');
+  proj.blocks = generateBlocksFromBeats(proj.structure.beats, 200000);
+  Store.project = proj;
   Store.save();
   UI.selectedBlockId = null;
   boot();
@@ -1347,15 +1400,19 @@ $('btn-load').onclick = () => {
   const input = document.createElement('input');
   input.type = 'file'; input.accept = '.vnproject,.json';
   input.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
       try {
         Store.project = JSON.parse(ev.target.result);
-        Store.save();
-        UI.selectedBlockId = null;
-        boot();
+        // migrate old projects without beats
+        if (!Store.project.structure.beats?.length) {
+          Store.project.structure.beats = beatsForTemplate(Store.project.structure.template || 'save_the_cat');
+          if (!Store.project.blocks?.length) {
+            Store.project.blocks = generateBlocksFromBeats(Store.project.structure.beats, Store.project.story_bible.target_words || 200000);
+          }
+        }
+        Store.save(); UI.selectedBlockId = null; boot();
       } catch { alert('文件格式错误'); }
     };
     reader.readAsText(file);
@@ -1364,29 +1421,31 @@ $('btn-load').onclick = () => {
 };
 
 $('btn-export-dtl').onclick = () => {
-  // Merge all scenes into DTL
   const scenes = Object.values(Store.project.scenes);
   if (!scenes.length) { alert('暂无场景内容，请先在节点图中创建场景。'); return; }
-  const vars = (Store.project.story_bible.variables || []).map(v => `set {${v.name}} = ${v.initial}`).join('\n');
+  const vars = (Store.project.story_bible.variables||[]).map(v => `set {${v.name}} = ${v.initial}`).join('\n');
   const dtl = (vars ? vars + '\n\n' : '') + scenes.join('\n\n');
   localStorage.setItem(DTL_KEY, dtl);
-  // Download
-  const blob = new Blob([dtl], { type: 'text/plain' });
+  const blob = new Blob([dtl], { type:'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = (Store.project.title || 'story') + '.dtl';
   a.click();
 };
 
-$('btn-add-block').onclick = () => {
-  const block = Store.addBlock('新场景块');
+$('btn-set-branching').onclick = () => {
+  if (!UI.selectedBlockId) { alert('请先在侧边栏选中一个节拍块'); return; }
+  const beat = Store.getBeatForBlock(UI.selectedBlockId);
+  if (!beat) return;
+  Store.project.structure.branching_beat_id = beat.id;
+  Store.save();
   renderSidebar();
-  selectBlock(block.id);
+  if (UI.currentTab === 'beatsheet') renderBeatSheet();
 };
 
 $('btn-import-skeleton').onclick = () => {
   const block = Store.getBlock(UI.selectedBlockId);
-  if (!block) { alert('请先选择一个场景块'); return; }
+  if (!block) { alert('请先选择一个节拍块'); return; }
   importSkeletonAsNodes(block);
 };
 
@@ -1400,7 +1459,6 @@ $('btn-add-scene-node').onclick = () => {
   UI.dfNodeByScene[name] = id;
 };
 
-// Tab buttons
 document.querySelectorAll('.tab').forEach(tab => {
   tab.onclick = () => { if (!tab.disabled) switchTab(tab.dataset.tab); };
 });
@@ -1419,19 +1477,32 @@ function escAttr(s) { return String(s||'').replace(/"/g,'&quot;'); }
 function boot() {
   Store.load();
   const proj = Store.project;
-  $('project-name').textContent = proj.title || '未命名项目';
 
-  // Load AI config into UI
+  // Migrate old projects without beat structure
+  if (!proj.structure.beats?.length) {
+    proj.structure.beats = beatsForTemplate(proj.structure.template || 'save_the_cat');
+    if (!proj.blocks?.length) {
+      proj.blocks = generateBlocksFromBeats(proj.structure.beats, proj.story_bible.target_words || 200000);
+    } else {
+      // Link existing blocks to beats by index
+      proj.structure.beats.forEach((beat, i) => {
+        const block = proj.blocks[i];
+        if (block) { beat.block_id = block.id; block.beat_id = beat.id; }
+      });
+    }
+    Store.save();
+  }
+
+  $('project-name').textContent = proj.title || '未命名项目';
   $('cfg-key').value   = AIClient.config.apiKey;
   $('cfg-url').value   = AIClient.config.baseUrl;
   $('cfg-model').value = AIClient.config.model;
+
   if (AIClient.isConfigured()) {
     $('ai-config').classList.add('collapsed');
     $('ai-config-arrow').textContent = '▶';
     const st = $('ai-status');
-    st.style.display = 'block';
-    st.className = 'ai-status ok';
-    st.textContent = '✓ 已配置';
+    st.style.display = 'block'; st.className = 'ai-status ok'; st.textContent = '✓ 已配置';
   }
 
   renderSidebar();
