@@ -1,6 +1,6 @@
 extends Control
 
-const TIMELINE_PATH := "res://timelines/四海纪.dtl"
+const TIMELINE_PATH := "res://timelines/光速迷途.dtl"
 
 var _log_label: RichTextLabel
 

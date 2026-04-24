@@ -24,6 +24,7 @@ Dialogic="*res://addons/dialogic/Core/DialogicGameHandler.gd"
 directories/dch_directory={}
 directories/dtl_directory={
 "test": "res://timelines/test.dtl",
+"光速迷途": "res://timelines/光速迷途.dtl",
 "四海纪": "res://timelines/四海纪.dtl"
 }
 layout/style_directory={}
