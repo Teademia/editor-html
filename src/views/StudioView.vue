@@ -3,8 +3,8 @@
     <header class="toolbar">
       <RouterLink class="brand" to="/">The Ember Tavern</RouterLink>
       <button class="btn" @click="newProject">新建项目</button>
-      <button class="btn" @click="triggerImportProject">导入项目</button>
-      <button class="btn primary" @click="saveProject">保存项目</button>
+      <button class="btn" @click="triggerImportProject">导入工程</button>
+      <button class="btn primary" @click="exportProject">保存工程文件</button>
       <button class="btn" @click="exportDTL">导出 DTL</button>
       <RouterLink class="btn" to="/editor">DTL 编辑器</RouterLink>
       <RouterLink class="btn" to="/player">播放器</RouterLink>
@@ -559,17 +559,41 @@ function triggerImportProject() {
   projectFileInput.value?.click();
 }
 
+function exportProject() {
+  syncPersonality();
+  const bundle = {
+    __version: 1,
+    project: JSON.parse(JSON.stringify(project)),
+    ai_config: { ...AIClient.config },
+  };
+  const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${project.title || 'story'}.vnproject`;
+  link.click();
+  URL.revokeObjectURL(url);
+  writeStorage(STORE_KEY, JSON.stringify(project));
+}
+
 function handleProjectFile(event) {
   const file = event.target.files?.[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      const loaded = migrateProject(JSON.parse(String(reader.result || '{}')));
+      const raw = JSON.parse(String(reader.result || '{}'));
+      const projectData = raw.__version ? raw.project : raw;
+      const loaded = migrateProject(projectData);
       Object.assign(project, loaded);
       selectedBlockId.value = project.blocks[0]?.id || null;
       personalityInput.value = (project.story_bible.protagonist.personality || []).join(', ');
-      saveProject();
+      if (raw.ai_config) {
+        Object.assign(AIClient.config, raw.ai_config);
+        Object.assign(aiConfig, AIClient.config);
+        AIClient.saveConfig();
+      }
+      writeStorage(STORE_KEY, JSON.stringify(project));
       nextTick(loadBlockIntoGraph);
     } catch {
       window.alert('项目文件格式错误。');
