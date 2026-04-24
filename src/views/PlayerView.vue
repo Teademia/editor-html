@@ -4,15 +4,30 @@
       <RouterLink class="title" to="/">The Ember Tavern</RouterLink>
       <span class="crumb mono">/ {{ currentLabel || '未开始' }}</span>
       <span class="spacer"></span>
+      <button class="btn" @click="loadFromProject" title="读取 Studio 中当前工程">从工程播放</button>
+      <button class="btn" @click="triggerFileInput">加载 DTL 文件</button>
+      <button class="btn primary" @click="restart" :disabled="!dtlText">重新开始</button>
+      <input ref="fileInput" type="file" accept=".dtl,.txt" class="hidden-input" @change="handleFile" />
       <RouterLink class="btn" to="/editor">编辑器</RouterLink>
-      <button class="btn primary" @click="restart">重新开始</button>
     </header>
 
     <main class="reader">
-      <div v-if="error" class="error card">
+      <div v-if="!dtlText && !error" class="empty-state card">
+        <div class="empty-title">尚未加载剧情</div>
+        <div class="empty-hint">点击「从工程播放」直接读取 Studio 中的工程，或点击「加载 DTL 文件」选择导出的 .dtl 文件。</div>
+        <div class="row">
+          <button class="btn primary" @click="loadFromProject">从工程播放</button>
+          <button class="btn" @click="triggerFileInput">加载 DTL 文件</button>
+        </div>
+      </div>
+
+      <div v-else-if="error" class="error card">
         <h2>{{ error.title }}</h2>
         <p>{{ error.body }}</p>
-        <button class="btn primary" @click="load">重试</button>
+        <div class="row">
+          <button class="btn primary" @click="loadFromProject">从工程播放</button>
+          <button class="btn" @click="triggerFileInput">加载 DTL 文件</button>
+        </div>
       </div>
 
       <div v-else class="page">
@@ -47,6 +62,14 @@
             <span v-if="choice.condition" class="cond mono">{{ choice.condition }}</span>
           </button>
         </div>
+
+        <div v-else-if="pendingJump" class="continue-bar">
+          <button class="btn primary" @click="executePendingJump">继续 ›</button>
+        </div>
+
+        <div v-else-if="!renderedLines.length && !endText" class="stuck-hint">
+          <span class="mono">— 场景内容为空或无后续出口 —</span>
+        </div>
       </div>
     </main>
 
@@ -55,19 +78,18 @@
         <span class="k">{{ key }}</span>
         <span class="v">{{ formatValue(value) }}</span>
       </div>
-      <a class="mono" href="/story.dtl" target="_blank" rel="noreferrer">story.dtl</a>
     </footer>
   </div>
 </template>
 
 <script setup>
 import { reactive, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import { applySet, evalCond, parseDTL } from '../utils/dtlEngine';
-import { DTL_KEY, PROGRESS_KEY, readStorage, writeStorage } from '../utils/storage';
+import { DTL_KEY, PROGRESS_KEY, STORE_KEY, readStorage, writeStorage } from '../utils/storage';
 
-const STORY_URL = '/story.dtl';
-
+const route = useRoute();
+const fileInput = ref(null);
 const dtlText = ref('');
 const events = ref([]);
 const labelIndex = ref({});
@@ -77,6 +99,7 @@ const currentLabel = ref('');
 const renderedLines = ref([]);
 const choices = ref([]);
 const endText = ref('');
+const pendingJump = ref('');
 const error = ref(null);
 const state = reactive({});
 
@@ -173,7 +196,12 @@ function collectScene(fromIdx) {
       }
       break;
     } else if (event.type === 'jump' && event.indent === 0 && active) {
-      queueMicrotask(() => renderScene(event.label));
+      if (lines.length === 0) {
+        // 空场景纯跳转，无需用户点击
+        queueMicrotask(() => renderScene(event.label));
+      } else {
+        lines.push({ kind: '_jump', target: event.label });
+      }
       break;
     } else if (event.type === 'end' && active) {
       localEndText = '草稿待续';
@@ -198,9 +226,11 @@ function renderScene(label) {
   document.title = title.value || 'Story';
 
   const collected = collectScene(start + 1);
-  renderedLines.value = collected.lines;
+  const jumpLine = collected.lines.find((l) => l.kind === '_jump');
+  renderedLines.value = collected.lines.filter((l) => l.kind !== '_jump');
   choices.value = collected.sceneChoices;
   endText.value = collected.localEndText;
+  pendingJump.value = jumpLine?.target || '';
 
   writeStorage(PROGRESS_KEY, JSON.stringify({ label, state: { ...state } }));
 }
@@ -228,6 +258,14 @@ function boot(text) {
   const titleMatch = text.match(/^#\s*(.+)/m);
   title.value = titleMatch ? titleMatch[1].trim() : 'Story';
 
+  // 优先使用路由 query 参数 ?from=label（来自「从此处播放」）
+  const fromLabel = route.query.from;
+  if (fromLabel && labelIndex.value[fromLabel] !== undefined) {
+    renderScene(fromLabel);
+    return;
+  }
+
+  // 其次恢复上次进度
   const rawProgress = readStorage(PROGRESS_KEY);
   if (rawProgress) {
     try {
@@ -238,27 +276,61 @@ function boot(text) {
         return;
       }
     } catch {
-      // Ignore invalid progress.
+      // ignore
     }
   }
 
   renderScene(startLabel.value);
 }
 
-async function load() {
-  const saved = readStorage(DTL_KEY);
-  if (saved) {
-    boot(saved);
+function loadFromProject() {
+  const raw = readStorage(STORE_KEY);
+  if (!raw) {
+    error.value = { title: '没有找到工程', body: '请先在 Studio 中打开或创建一个工程，工程会自动保存到浏览器本地。' };
     return;
   }
-
   try {
-    const response = await fetch(`${STORY_URL}?t=${Date.now()}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    boot(await response.text());
+    const project = JSON.parse(raw);
+    const scenes = project.scenes || {};
+    const variables = project.story_bible?.variables || [];
+
+    const initSets = variables.map((v) => ({ varname: v.name, op: '=', value: String(v.initial ?? 0) }));
+    const sceneList = Object.values(scenes).filter(Boolean);
+
+    if (!sceneList.length) {
+      error.value = { title: '工程中没有场景', body: '请先在 Studio 节点图中生成场景节点并写入内容。' };
+      return;
+    }
+
+    const vars = initSets.map((s) => `set {${s.varname}} ${s.op} ${s.value}`).join('\n');
+    const dtl = `${vars ? `${vars}\n\n` : ''}${sceneList.join('\n\n')}`;
+    writeStorage(DTL_KEY, dtl);
+    boot(dtl);
   } catch (err) {
-    error.value = { title: '无法加载剧情', body: String(err.message || err) };
+    error.value = { title: '工程解析失败', body: String(err.message) };
   }
+}
+
+function triggerFileInput() {
+  fileInput.value?.click();
+}
+
+function handleFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const text = String(reader.result || '');
+    writeStorage(DTL_KEY, text);
+    boot(text);
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function executePendingJump() {
+  const target = pendingJump.value;
+  if (target) renderScene(target);
 }
 
 function selectChoice(choice) {
@@ -267,7 +339,9 @@ function selectChoice(choice) {
   if (choice.goto) renderScene(choice.goto);
 }
 
-load();
+// 启动时尝试从 localStorage 恢复上次播放的 DTL
+const saved = readStorage(DTL_KEY);
+if (saved) boot(saved);
 </script>
 
 <style scoped>
@@ -280,15 +354,17 @@ load();
 .topbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 18px 24px;
+  gap: 8px;
+  padding: 14px 24px;
   border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
 }
 
 .title {
   text-decoration: none;
   font-family: var(--serif);
   font-size: 18px;
+  margin-right: 4px;
 }
 
 .crumb {
@@ -298,6 +374,10 @@ load();
 
 .spacer {
   flex: 1;
+}
+
+.hidden-input {
+  display: none;
 }
 
 .reader {
@@ -398,7 +478,8 @@ load();
 }
 
 .end-card,
-.error {
+.error,
+.empty-state {
   width: min(720px, 100%);
   margin: 0 auto;
   padding: 28px;
@@ -415,6 +496,37 @@ load();
   text-transform: uppercase;
 }
 
+.empty-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.empty-hint {
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.continue-bar {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.stuck-hint {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-family: var(--mono);
+  text-align: center;
+  padding: 12px 0;
+}
+
 .hud {
   display: flex;
   align-items: center;
@@ -423,6 +535,7 @@ load();
   padding: 12px 24px 18px;
   border-top: 1px solid var(--line);
   background: rgba(10, 8, 5, 0.5);
+  min-height: 44px;
 }
 
 .var {

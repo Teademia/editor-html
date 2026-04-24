@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="studio-view page-shell">
     <header class="toolbar">
       <RouterLink class="brand" to="/">The Ember Tavern</RouterLink>
@@ -273,7 +273,30 @@
             <button class="btn" @click="importSkeletonAsNodes">由骨架生成节点</button>
             <button class="btn" @click="addSceneNode">添加场景节点</button>
           </div>
-          <div ref="graphEl" class="graph"></div>
+          <div class="graph-body">
+            <div ref="graphEl" class="graph"></div>
+            <div v-if="selectedSceneName" class="scene-editor">
+              <div class="scene-editor-head">
+                <span class="mono scene-editor-name">{{ selectedSceneName }}</span>
+                <button class="btn danger" @click="deleteSelectedNode">删除节点</button>
+              </div>
+              <textarea
+                class="scene-editor-textarea mono"
+                :value="sceneEditorContent"
+                @input="sceneEditorContent = $event.target.value"
+                placeholder="在此输入场景内容，格式：&#10;角色名: 台词&#10;旁白文字&#10;jump 下一场景名"
+                spellcheck="false"
+              ></textarea>
+              <div class="scene-editor-footer">
+                <button class="btn primary" @click="commitSceneEdit">保存场景</button>
+                <button class="btn" @click="playFromHere">▶ 从此处播放</button>
+                <span class="hint">Ctrl+Enter 保存</span>
+              </div>
+            </div>
+            <div v-else class="scene-editor scene-editor-empty">
+              <span class="hint">点击节点查看 / 编辑场景内容</span>
+            </div>
+          </div>
         </section>
       </main>
 
@@ -310,19 +333,19 @@
             </div>
           </div>
 
-          <div class="card ai-mode-block">
+          <div class="card ai-mode-block" v-if="currentTab === 'bible'">
             <div class="section-title">L1 · Story Bible</div>
             <button class="btn primary" @click="runValidateBible">检查全局设定</button>
             <pre class="ai-output">{{ aiOutputs.bible || 'AI 输出会显示在这里。' }}</pre>
           </div>
 
-          <div class="card ai-mode-block">
+          <div class="card ai-mode-block" v-if="currentTab === 'beats'">
             <div class="section-title">L2 · 结构节拍</div>
             <button class="btn primary" @click="runCheckBeats">检查节拍结构</button>
             <pre class="ai-output">{{ aiOutputs.beats || 'AI 会检查节拍衔接与节奏。' }}</pre>
           </div>
 
-          <div class="card ai-mode-block" v-if="selectedBlock">
+          <div class="card ai-mode-block" v-if="currentTab === 'block' && selectedBlock">
             <div class="section-title">L3 · 功能块骨架</div>
             <div class="row">
               <button class="btn primary" @click="runGenerateSkeleton">生成骨架</button>
@@ -374,9 +397,9 @@
 <script setup>
 import Drawflow from 'drawflow';
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import { AIClient } from '../utils/aiClient';
-import { DTL_KEY, STORE_KEY, readStorage, writeStorage } from '../utils/storage';
+import { DTL_KEY, PROGRESS_KEY, STORE_KEY, readStorage, writeStorage } from '../utils/storage';
 
 const BEAT_TEMPLATES = {
   save_the_cat: {
@@ -497,6 +520,7 @@ function migrateProject(raw) {
   return project;
 }
 
+const router = useRouter();
 const project = reactive(migrateProject(loadProject()));
 const currentTab = ref('bible');
 const selectedBlockId = ref(project.blocks[0]?.id || null);
@@ -508,12 +532,14 @@ const proposedChoicePoints = ref([]);
 const projectFileInput = ref(null);
 const graphEl = ref(null);
 const selectedSceneNode = ref(null);
+const sceneEditorContent = ref('');
 const sceneContext = reactive({ purpose: '', emotion: '平静' });
 
 let graphEditor = null;
-let graphNodeByScene = {};
+const graphNodeByScene = reactive({});
 let aiAbortController = null;
 let graphLoading = false;
+let projectFileHandle = null;
 
 function loadProject() {
   const raw = readStorage(STORE_KEY);
@@ -723,7 +749,7 @@ function loadBlockIntoGraph() {
   graphLoading = true;
   graphEditor.clearModuleSelected();
   graphEditor.import({ drawflow: { Home: { data: {} } } });
-  graphNodeByScene = {};
+  Object.keys(graphNodeByScene).forEach((k) => delete graphNodeByScene[k]);
   selectedSceneNode.value = null;
 
   const prefix = `${selectedBlock.value.id}_`;
@@ -760,17 +786,33 @@ function importSkeletonAsNodes() {
     window.alert('请先生成骨架。');
     return;
   }
-  const lines = selectedBlock.value.skeleton.split('\n').filter((line) => /^\d+\./.test(line.trim()));
-  let x = 40;
-  let y = 40;
-  for (const line of lines) {
+  if (!graphEditor) {
+    window.alert('节点图尚未初始化，请先切换到节点图标签页。');
+    return;
+  }
+  const lines = selectedBlock.value.skeleton.split('\n').filter((line) => /^#{0,6}\s*\d+\./.test(line.trim()));
+  if (!lines.length) {
+    window.alert('骨架中未找到编号列表，请确认骨架格式。');
+    return;
+  }
+  const names = lines.map((line) => {
     const slug = line
+      .replace(/^#+\s*/, '')
       .replace(/^\d+\.\s*/, '')
       .slice(0, 20)
       .trim()
-      .replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')
+      .replace(/[^a-zA-Z0-9一-龥]/g, '_')
       .replace(/_+/g, '_');
-    const name = `${selectedBlock.value.id}_${slug}`;
+    return `${selectedBlock.value.id}_${slug}`;
+  });
+  const allExist = names.every((name) => !!graphNodeByScene[name]);
+  if (allExist) {
+    window.alert(`所有 ${names.length} 个骨架节点已存在于当前图中。如需重新生成，请先手动清空节点图。`);
+    return;
+  }
+  let x = 40;
+  let y = 40;
+  for (const name of names) {
     if (!project.scenes[name]) project.scenes[name] = `label ${name}\n`;
     if (!graphNodeByScene[name]) addGraphSceneNode(name, project.scenes[name], x, y);
     x += 240;
@@ -780,7 +822,6 @@ function importSkeletonAsNodes() {
     }
   }
 }
-
 function addSceneNode() {
   if (!selectedBlock.value || !graphEditor) return;
   const name = `${selectedBlock.value.id}_scene_${Date.now()}`;
@@ -802,9 +843,15 @@ function initGraph() {
   graphEditor.on('nodeSelected', (id) => {
     selectedSceneNode.value = Number(id);
     sceneContext.purpose = graphEditor.getNodeFromId(id)?.data?.purpose || '';
+    const name = graphEditor.getNodeFromId(id)?.name;
+    if (name) {
+      const raw = project.scenes[name] || '';
+      sceneEditorContent.value = raw.replace(/^label\s+\S+\n?/, '');
+    }
   });
   graphEditor.on('nodeUnselected', () => {
     selectedSceneNode.value = null;
+    sceneEditorContent.value = '';
   });
   graphEditor.on('connectionCreated', (conn) => {
     if (graphLoading) return;
@@ -960,20 +1007,65 @@ async function runGenerateScene() {
   }
 }
 
+function stripDtlFence(raw) {
+  return raw
+    .replace(/^```[\w]*\n?/m, '')
+    .replace(/\n?```\s*$/m, '')
+    .replace(/^label\s+\S+\n?/m, '')
+    .trim();
+}
+
 function insertSceneIntoNode() {
   if (!selectedSceneName.value || !aiOutputs.scene) return;
-  project.scenes[selectedSceneName.value] = `label ${selectedSceneName.value}\n${aiOutputs.scene.trim()}`;
+  const content = stripDtlFence(aiOutputs.scene);
+  project.scenes[selectedSceneName.value] = `label ${selectedSceneName.value}\n${content}\n`;
+  sceneEditorContent.value = content;
   refreshGraphNode(selectedSceneName.value);
+  saveProject();
+}
+
+function commitSceneEdit() {
+  if (!selectedSceneName.value) return;
+  const content = sceneEditorContent.value.trim();
+  project.scenes[selectedSceneName.value] = `label ${selectedSceneName.value}\n${content ? content + '\n' : ''}`;
+  refreshGraphNode(selectedSceneName.value);
+  saveProject();
+}
+
+function deleteSelectedNode() {
+  if (!selectedSceneName.value || !graphEditor) return;
+  if (!window.confirm(`删除场景「${selectedSceneName.value}」？此操作不可撤销。`)) return;
+  const nodeId = graphNodeByScene[selectedSceneName.value];
+  delete project.scenes[selectedSceneName.value];
+  delete graphNodeByScene[selectedSceneName.value];
+  graphEditor.removeNodeId(`node-${nodeId}`);
+  selectedSceneNode.value = null;
+  sceneEditorContent.value = '';
+  saveProject();
+}
+
+function playFromHere() {
+  if (!selectedSceneName.value) return;
+  commitSceneEdit();
+  const scenes = Object.values(project.scenes).filter(Boolean);
+  const variables = project.story_bible?.variables || [];
+  const vars = variables.map((v) => `set {${v.name}} = ${v.initial ?? 0}`).join('\n');
+  const dtl = `${vars ? `${vars}\n\n` : ''}${scenes.join('\n\n')}`;
+  writeStorage(DTL_KEY, dtl);
+  router.push({ path: '/player', query: { from: selectedSceneName.value } });
 }
 
 watch(selectedBlockId, () => {
   if (currentTab.value === 'graph') nextTick(loadBlockIntoGraph);
 });
 
-watch(currentTab, async (tab) => {
+watch(currentTab, async (tab, prevTab) => {
+  if (prevTab === 'graph') {
+    graphEditor = null;
+  }
   if (tab !== 'graph') return;
   await nextTick();
-  if (!graphEditor && graphEl.value) initGraph();
+  if (graphEl.value) initGraph();
   loadBlockIntoGraph();
 });
 
@@ -988,13 +1080,55 @@ watch(
   },
 );
 
+async function saveToFile() {
+  syncPersonality();
+  const bundle = {
+    __version: 1,
+    project: JSON.parse(JSON.stringify(project)),
+    ai_config: { ...AIClient.config },
+  };
+  const content = JSON.stringify(bundle, null, 2);
+  const filename = `${project.title || 'story'}.vnproject`;
+
+  if (!window.showDirectoryPicker) {
+    exportProject();
+    return;
+  }
+
+  try {
+    if (!projectFileHandle) {
+      const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      projectFileHandle = await dirHandle.getFileHandle(filename, { create: true });
+    }
+    const writable = await projectFileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+    writeStorage(STORE_KEY, JSON.stringify(project));
+  } catch (err) {
+    if (err.name !== 'AbortError') window.alert(`保存失败：${err.message}`);
+  }
+}
+
+function onKeyDown(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveToFile();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && selectedSceneName.value) {
+    e.preventDefault();
+    commitSceneEdit();
+  }
+}
+
 onMounted(async () => {
   await nextTick();
   if (currentTab.value === 'graph' && graphEl.value) initGraph();
+  window.addEventListener('keydown', onKeyDown);
 });
 
 onBeforeUnmount(() => {
   graphEditor = null;
+  window.removeEventListener('keydown', onKeyDown);
 });
 </script>
 
@@ -1161,13 +1295,75 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid var(--line);
 }
 
+.graph-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
 .graph {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   background:
     radial-gradient(rgba(240, 162, 107, 0.05) 1px, transparent 1px),
     var(--bg);
   background-size: 26px 26px;
+}
+
+.scene-editor {
+  width: 300px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  background: rgba(26, 20, 13, 0.97);
+}
+
+.scene-editor-empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.scene-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.scene-editor-name {
+  font-size: 11px;
+  color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-editor-textarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 12px;
+  font-family: var(--mono);
+}
+
+.scene-editor-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
 }
 
 .section {
