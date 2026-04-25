@@ -866,8 +866,28 @@ function initGraph() {
   });
 }
 
+function normalizeSceneLine(line) {
+  const t = line.trimStart();
+  // Strip [block_N] markers
+  if (/^\[block_\d+\]$/.test(t)) return null;
+  // Convert [set varname op value] → set {varname} op value
+  const bracketSet = t.match(/^\[set\s+([^}\]=+\-*\/\s]+)\s*(=|\+=|-=|\*=|\/=)\s*(.+?)\]$/);
+  if (bracketSet) return `set {${bracketSet[1]}} ${bracketSet[2]} ${bracketSet[3].trim()}`;
+  // Add braces to bare: set varname op value (no braces, no dot-path)
+  const bareSet = t.match(/^set\s+([^{}\s=+\-*\/][^=+\-*\/\s]*)\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
+  if (bareSet && !bareSet[1].startsWith('{')) return `set {${bareSet[1]}} ${bareSet[2]} ${bareSet[3].trim()}`;
+  return line;
+}
+
+function normalizeDTL(raw) {
+  return raw.split('\n').map((line) => {
+    const result = normalizeSceneLine(line);
+    return result === null ? '' : result;
+  }).join('\n');
+}
+
 function exportDTL() {
-  const scenes = Object.values(project.scenes);
+  const scenes = Object.values(project.scenes).map(normalizeDTL);
   if (!scenes.length) {
     window.alert('当前还没有场景内容。');
     return;
@@ -1047,7 +1067,7 @@ function deleteSelectedNode() {
 function playFromHere() {
   if (!selectedSceneName.value) return;
   commitSceneEdit();
-  const scenes = Object.values(project.scenes).filter(Boolean);
+  const scenes = Object.values(project.scenes).filter(Boolean).map(normalizeDTL);
   const variables = project.story_bible?.variables || [];
   const vars = variables.map((v) => `set {${v.name}} = ${v.initial ?? 0}`).join('\n');
   const dtl = `${vars ? `${vars}\n\n` : ''}${scenes.join('\n\n')}`;

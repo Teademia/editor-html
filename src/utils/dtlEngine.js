@@ -11,6 +11,9 @@ function measureIndent(raw) {
 function parseLine(stripped, indent) {
   if (!stripped || stripped.startsWith('#')) return null;
 
+  // Strip [block_N] markers (used as block-type comments, not valid DTL)
+  if (/^\[block_\w+\]$/.test(stripped)) return null;
+
   if (stripped.startsWith('label ')) {
     return { type: 'label', name: stripped.slice(6).trim().split(/\s/)[0], indent };
   }
@@ -23,7 +26,19 @@ function parseLine(stripped, indent) {
       : { type: 'jump', timeline: '', label: target, indent };
   }
 
-  const setMatch = stripped.match(/^set\s+\{?(\w+)\}?\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
+  // Handle [set varname op value] bracketed format → normalize to set event
+  const bracketSetMatch = stripped.match(/^\[set\s+\{?([^}=+\-*\/\s\]]+)\}?\s*(=|\+=|-=|\*=|\/=)\s*([^\]]+)\]$/);
+  if (bracketSetMatch) {
+    return {
+      type: 'set',
+      varname: bracketSetMatch[1],
+      op: bracketSetMatch[2],
+      value: bracketSetMatch[3].trim(),
+      indent,
+    };
+  }
+
+  const setMatch = stripped.match(/^set\s+\{?([^}=+\-*\/\s]+)\}?\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
   if (setMatch) {
     return {
       type: 'set',
@@ -105,7 +120,7 @@ export function parseDTL(text) {
 
 export function evalCond(expr, state) {
   if (!expr) return true;
-  const resolved = expr.replace(/\{(\w+)\}/g, (_, name) => {
+  const resolved = expr.replace(/\{([^}]+)\}/g, (_, name) => {
     const value = state[name];
     if (typeof value === 'boolean') return value ? 'true' : 'false';
     if (typeof value === 'string') return JSON.stringify(value);
@@ -130,7 +145,7 @@ export function applySet(event, state) {
           ? parseFloat(raw)
           : /^["'].*["']$/.test(raw)
             ? raw.slice(1, -1)
-            : /^\{(\w+)\}$/.test(raw)
+            : /^\{([^}]+)\}$/.test(raw)
               ? (state[raw.slice(1, -1)] ?? 0)
               : raw;
 
