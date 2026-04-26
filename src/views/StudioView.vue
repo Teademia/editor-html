@@ -5,10 +5,12 @@
       <button class="btn" @click="newProject">新建项目</button>
       <button class="btn" @click="triggerImportProject">导入工程</button>
       <button class="btn primary" @click="exportProject">保存工程文件</button>
+      <button class="btn" @click="selectGodotProject">选择 Godot 项目</button>
       <button class="btn" @click="exportDTL">导出 DTL</button>
       <RouterLink class="btn" to="/editor">DTL 编辑器</RouterLink>
       <RouterLink class="btn" to="/player">播放器</RouterLink>
       <span class="spacer"></span>
+      <span v-if="godotProjectName" class="toolbar-meta mono">Godot: {{ godotProjectName }}</span>
       <span class="toolbar-meta mono">{{ project.title || '未命名项目' }}</span>
       <input ref="projectFileInput" type="file" accept=".vnproject,.json" class="hidden-input" @change="handleProjectFile" />
     </header>
@@ -105,17 +107,16 @@
           <div class="section card">
             <div class="section-head">
               <div class="section-title">变量系统</div>
-              <button class="btn" @click="addVariable">添加变量</button>
+              <span class="section-note mono">Dialogic 固定变量</span>
             </div>
             <div class="stack">
-              <div v-for="(variable, index) in project.story_bible.variables" :key="`var-${index}`" class="list-card card">
+              <div v-for="(variable, index) in fixedVariables()" :key="`var-${index}`" class="list-card card">
                 <div class="split four">
-                  <input v-model="variable.name" class="input mono" type="text" placeholder="变量名" />
-                  <input v-model.number="variable.initial" class="input mono" type="number" placeholder="初始值" />
-                  <input v-model.number="variable.min" class="input mono" type="number" placeholder="最小值" />
-                  <input v-model.number="variable.max" class="input mono" type="number" placeholder="最大值" />
+                  <input :value="variable.name" class="input mono" type="text" readonly />
+                  <input :value="variable.initial" class="input mono" type="number" readonly />
+                  <input :value="variable.min" class="input mono" type="number" readonly />
+                  <input :value="variable.max" class="input mono" type="number" readonly />
                 </div>
-                <button class="btn danger" @click="removeVariable(index)">删除</button>
               </div>
             </div>
           </div>
@@ -280,11 +281,27 @@
                 <span class="mono scene-editor-name">{{ selectedSceneName }}</span>
                 <button class="btn danger" @click="deleteSelectedNode">删除节点</button>
               </div>
+              <div class="scene-asset-tools">
+                <label>场景图片</label>
+                <input
+                  v-model="sceneImagePath"
+                  class="input mono"
+                  type="text"
+                  placeholder="res://assets/backgrounds/scene.png"
+                />
+                <div class="row">
+                  <input v-model.number="sceneImageFade" class="input mono fade-input" type="number" min="0" step="0.1" />
+                  <button class="btn" @click="triggerSceneImagePick">选图片名</button>
+                  <button class="btn" @click="insertSceneImage">插入背景</button>
+                </div>
+                <input ref="sceneImageFileInput" type="file" accept="image/*" class="hidden-input" @change="handleSceneImagePick" />
+                <span class="hint">使用 Godot 工程内的 res:// 图片路径。</span>
+              </div>
               <textarea
                 class="scene-editor-textarea mono"
                 :value="sceneEditorContent"
                 @input="sceneEditorContent = $event.target.value"
-                placeholder="在此输入场景内容，格式：&#10;角色名: 台词&#10;旁白文字&#10;jump 下一场景名"
+                placeholder="在此输入场景内容，格式：&#10;[background arg=&quot;res://assets/backgrounds/scene.png&quot; fade=&quot;0.3&quot;]&#10;角色名: 台词&#10;旁白文字&#10;jump 下一场景名"
                 spellcheck="false"
               ></textarea>
               <div class="scene-editor-footer">
@@ -318,11 +335,30 @@
               </div>
               <div class="field">
                 <label>Model</label>
-                <input v-model="aiConfig.model" class="input mono" type="text" />
+                <select v-model="aiConfig.model" class="select mono">
+                  <option v-for="model in DEEPSEEK_MODEL_OPTIONS" :key="model.value" :value="model.value">
+                    {{ model.label }}
+                  </option>
+                </select>
+                <div class="hint">{{ selectedModelDescription }}</div>
               </div>
               <div class="field">
                 <label>API Key</label>
                 <input v-model="aiConfig.apiKey" class="input mono" type="password" />
+              </div>
+              <div class="split two">
+                <div class="field">
+                  <label>Image Base URL</label>
+                  <input v-model="aiConfig.imageBaseUrl" class="input mono" type="text" placeholder="可留空，默认使用 Base URL" />
+                </div>
+                <div class="field">
+                  <label>Image Model</label>
+                  <input v-model="aiConfig.imageModel" class="input mono" type="text" placeholder="例如 dall-e-3 / gpt-image-1" />
+                </div>
+              </div>
+              <div class="field">
+                <label>Image Size</label>
+                <input v-model="aiConfig.imageSize" class="input mono" type="text" placeholder="1024x576" />
               </div>
             </div>
             <div class="section-head">
@@ -387,6 +423,30 @@
               <button class="btn" :disabled="!selectedSceneName || !aiOutputs.scene" @click="insertSceneIntoNode">写入节点</button>
             </div>
             <pre class="ai-output">{{ aiOutputs.scene || '选中一个节点后即可生成场景。' }}</pre>
+
+            <div class="section-title">场景图片</div>
+            <div class="row">
+              <button class="btn" :disabled="!selectedSceneName || imageGeneration.running" @click="runGenerateImagePrompt">生成图片提示词</button>
+              <button class="btn primary" :disabled="!aiOutputs.imagePrompt || imageGeneration.running" @click="runGenerateSceneImage">
+                {{ imageGeneration.running ? '生成中...' : '生成图片' }}
+              </button>
+            </div>
+            <textarea v-model="aiOutputs.imagePrompt" class="textarea mono" rows="5" placeholder="图片提示词会显示在这里。"></textarea>
+            <div v-if="imageGeneration.running || imageGeneration.status || imageGeneration.error" class="image-progress">
+              <div class="image-progress-head">
+                <span>{{ imageGeneration.error || imageGeneration.status }}</span>
+                <span class="mono">{{ imageGeneration.progress }}%</span>
+              </div>
+              <div class="image-progress-track">
+                <div class="image-progress-bar" :class="{ err: imageGeneration.error }" :style="{ width: `${imageGeneration.progress}%` }"></div>
+              </div>
+            </div>
+            <img v-if="generatedSceneImage" class="generated-image" :src="generatedSceneImage" alt="" />
+            <div v-if="generatedSceneImage" class="row">
+              <button class="btn" @click="downloadGeneratedSceneImage">下载图片</button>
+              <button class="btn" @click="insertGeneratedImagePath">插入到场景</button>
+            </div>
+            <div class="hint">已选择 Godot 项目时，图片会自动保存到 assets/backgrounds/；否则需要下载后手动放入该目录。</div>
           </div>
         </div>
       </aside>
@@ -400,6 +460,14 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import { RouterLink, useRouter } from 'vue-router';
 import { AIClient } from '../utils/aiClient';
 import { DTL_KEY, PROGRESS_KEY, STORE_KEY, readStorage, writeStorage } from '../utils/storage';
+import { CORE_VARIABLES, coreVariableSets, fixedVariables, isCoreVariable } from '../utils/variables.js';
+
+const DEEPSEEK_MODEL_OPTIONS = [
+  { value: 'deepseek-v4-pro', label: 'deepseek-v4-pro', description: '质量优先：适合正式剧情、复杂分支、长文本规划。' },
+  { value: 'deepseek-v4-flash', label: 'deepseek-v4-flash', description: '速度优先：适合批量生成节点、快速改写和日常草稿。' },
+  { value: 'deepseek-reasoner', label: 'deepseek-reasoner（旧兼容）', description: '推理模式旧名称：适合逻辑检查、伏笔和结局条件审查。' },
+  { value: 'deepseek-chat', label: 'deepseek-chat（旧兼容）', description: '普通聊天旧名称：保留给已有配置兼容。' },
+];
 
 const BEAT_TEMPLATES = {
   save_the_cat: {
@@ -453,7 +521,7 @@ function emptyProject() {
       opening: '',
       world: { setting: '', rules: '', tone: '' },
       protagonist: { name: '', personality: [], motivation: '', flaw: '' },
-      variables: [],
+      variables: fixedVariables(),
       endings: [],
       target_words: 200000,
     },
@@ -517,6 +585,14 @@ function migrateProject(raw) {
     }
   }
   project.scenes = project.scenes || {};
+  project.story_bible.variables = fixedVariables();
+  for (const block of project.blocks || []) {
+    if (block.design?.input_state?.variables) {
+      block.design.input_state.variables = Object.fromEntries(
+        Object.entries(block.design.input_state.variables).filter(([name]) => isCoreVariable(name)),
+      );
+    }
+  }
   return project;
 }
 
@@ -527,19 +603,29 @@ const selectedBlockId = ref(project.blocks[0]?.id || null);
 const personalityInput = ref((project.story_bible.protagonist.personality || []).join(', '));
 const aiConfigCollapsed = ref(true);
 const aiConfig = reactive({ ...AIClient.config });
-const aiOutputs = reactive({ bible: '', beats: '', skeleton: '', scene: '' });
+const aiOutputs = reactive({ bible: '', beats: '', skeleton: '', scene: '', imagePrompt: '' });
 const proposedChoicePoints = ref([]);
 const projectFileInput = ref(null);
+const sceneImageFileInput = ref(null);
 const graphEl = ref(null);
 const selectedSceneNode = ref(null);
 const sceneEditorContent = ref('');
+const sceneImagePath = ref('');
+const sceneImageFade = ref(0.3);
+const generatedSceneImage = ref('');
+const generatedImageFilename = ref('');
+const imageGeneration = reactive({ running: false, progress: 0, status: '', error: '' });
+const godotProjectName = ref('');
+const generatedImageSaved = ref(false);
 const sceneContext = reactive({ purpose: '', emotion: '平静' });
 
 let graphEditor = null;
 const graphNodeByScene = reactive({});
 let aiAbortController = null;
+let imageProgressTimer = null;
 let graphLoading = false;
 let projectFileHandle = null;
+let godotProjectDirHandle = null;
 
 function loadProject() {
   const raw = readStorage(STORE_KEY);
@@ -629,14 +715,6 @@ function handleProjectFile(event) {
   event.target.value = '';
 }
 
-function addVariable() {
-  project.story_bible.variables.push({ name: '', initial: 0, min: 0, max: 10 });
-}
-
-function removeVariable(index) {
-  project.story_bible.variables.splice(index, 1);
-}
-
 function addEnding() {
   project.story_bible.endings.push({ title: '', condition: '', description: '' });
 }
@@ -677,6 +755,9 @@ const selectedSceneName = computed(() => {
   const entry = Object.entries(graphNodeByScene).find(([, nodeId]) => nodeId === selectedSceneNode.value);
   return entry?.[0] || '';
 });
+const selectedModelDescription = computed(() => (
+  DEEPSEEK_MODEL_OPTIONS.find((model) => model.value === aiConfig.model)?.description || '当前为自定义模型名。'
+));
 
 function selectBlock(id) {
   selectedBlockId.value = id;
@@ -847,11 +928,13 @@ function initGraph() {
     if (name) {
       const raw = project.scenes[name] || '';
       sceneEditorContent.value = raw.replace(/^label\s+\S+\n?/, '');
+      sceneImagePath.value = firstBackgroundArg(sceneEditorContent.value);
     }
   });
   graphEditor.on('nodeUnselected', () => {
     selectedSceneNode.value = null;
     sceneEditorContent.value = '';
+    sceneImagePath.value = '';
   });
   graphEditor.on('connectionCreated', (conn) => {
     if (graphLoading) return;
@@ -866,40 +949,217 @@ function initGraph() {
   });
 }
 
+function firstBackgroundArg(content) {
+  const match = String(content || '').match(/^\[background\s+[^\]]*arg="([^"]+)"/m);
+  return match?.[1] || '';
+}
+
+function escapeShortcodeValue(value) {
+  return String(value || '').replace(/"/g, '\\"');
+}
+
+function triggerSceneImagePick() {
+  sceneImageFileInput.value?.click();
+}
+
+function handleSceneImagePick(event) {
+  const file = event.target.files?.[0];
+  if (file) sceneImagePath.value = `res://assets/backgrounds/${file.name}`;
+  event.target.value = '';
+}
+
+function insertSceneImage() {
+  if (!selectedSceneName.value) return;
+  const arg = sceneImagePath.value.trim();
+  if (!arg) {
+    window.alert('请先填写 Godot 图片路径，例如 res://assets/backgrounds/scene.png。');
+    return;
+  }
+  const fade = Number.isFinite(Number(sceneImageFade.value)) ? Math.max(0, Number(sceneImageFade.value)) : 0;
+  const line = `[background arg="${escapeShortcodeValue(arg)}"${fade ? ` fade="${fade}"` : ''}]`;
+  const withoutOld = sceneEditorContent.value
+    .split('\n')
+    .filter((item) => !/^\s*\[background\b/.test(item))
+    .join('\n')
+    .trimStart();
+  sceneEditorContent.value = `${line}\n${withoutOld}`.trimEnd();
+  commitSceneEdit();
+}
+
 function normalizeSceneLine(line) {
   const t = line.trimStart();
-  // Strip [block_N] markers
-  if (/^\[block_\d+\]$/.test(t)) return null;
+  const leading = line.slice(0, line.length - t.length);
+  // Strip [block] / [block_N] / [block_anything] markers
+  if (/^\[block(?:_[^\]]*)?\]$/.test(t)) return null;
+  if (/^\{[^}]+(?:=|\+=|-=|\*=|\/=)[^}]*\}$/.test(t)) return null;
+  const bracketNameSet = t.match(/^\[([^\]]+)\]\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
+  if (bracketNameSet) {
+    if (!isCoreVariable(bracketNameSet[1])) return null;
+    return `${leading}set {${bracketNameSet[1]}} ${bracketNameSet[2]} ${numericSetValue(bracketNameSet[3])}`;
+  }
+  if (/^\[background\b/.test(t)) return `${leading}${t}`;
+  if (/^\[[^\]]+(?:=|\+=|-=|\*=|\/=)[^\]]*\]$/.test(t) && !t.startsWith('[set ')) return null;
+  const conditionalChoice = t.match(/^(-\s+.+?)\s*\|\s*\[if\s+(.+?)\]\s*$/);
+  if (conditionalChoice && hasInvalidConditionVariable(conditionalChoice[2])) {
+    return `${leading}${conditionalChoice[1]}`;
+  }
+  const conditionalBranch = t.match(/^(if|elif)\s+(.+):$/);
+  if (conditionalBranch && hasInvalidConditionVariable(conditionalBranch[2])) return null;
   // Convert [set varname op value] → set {varname} op value
   const bracketSet = t.match(/^\[set\s+([^}\]=+\-*\/\s]+)\s*(=|\+=|-=|\*=|\/=)\s*(.+?)\]$/);
-  if (bracketSet) return `set {${bracketSet[1]}} ${bracketSet[2]} ${bracketSet[3].trim()}`;
+  if (bracketSet) {
+    if (!isCoreVariable(bracketSet[1])) return null;
+    return `set {${bracketSet[1]}} ${bracketSet[2]} ${numericSetValue(bracketSet[3])}`;
+  }
+  const bracedSet = t.match(/^set\s+\{([^}]+)\}\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
+  if (bracedSet) {
+    if (!isCoreVariable(bracedSet[1])) return null;
+    return `${leading}set {${bracedSet[1]}} ${bracedSet[2]} ${numericSetValue(bracedSet[3])}`;
+  }
   // Add braces to bare: set varname op value (no braces, no dot-path)
   const bareSet = t.match(/^set\s+([^{}\s=+\-*\/][^=+\-*\/\s]*)\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
-  if (bareSet && !bareSet[1].startsWith('{')) return `set {${bareSet[1]}} ${bareSet[2]} ${bareSet[3].trim()}`;
+  if (bareSet && !bareSet[1].startsWith('{')) {
+    if (!isCoreVariable(bareSet[1])) return null;
+    return `set {${bareSet[1]}} ${bareSet[2]} ${numericSetValue(bareSet[3])}`;
+  }
   return line;
 }
 
+function numericSetValue(raw) {
+  const value = String(raw || '').trim();
+  return /^-?\d+(\.\d+)?$/.test(value) ? value : '0';
+}
+
+function hasInvalidConditionVariable(condition) {
+  for (const name of String(condition || '').matchAll(/\{([^}]+)\}/g)) {
+    if (!isCoreVariable(name[1])) return true;
+  }
+  const withoutStrings = String(condition || '').replace(/(['"]).*?\1/g, '');
+  for (const [token] of withoutStrings.matchAll(/[A-Za-z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*/g)) {
+    if (['true', 'false', 'and', 'or', 'not'].includes(token)) continue;
+    if (!CORE_VARIABLES.includes(token)) return true;
+  }
+  return false;
+}
+
+// Convert [choice "text" -> target] → "- text\n\tjump target" (multi-line)
+function normalizeChoices(raw) {
+  return raw.replace(
+    /^[ \t]*\[choice\s+"([^"]*)"\s*->\s*([^\]\s]+)\s*\]\s*$/gm,
+    '- $1\n\tjump $2',
+  );
+}
+
 function normalizeDTL(raw) {
-  return raw.split('\n').map((line) => {
+  const choicesNormalized = normalizeChoices(raw);
+  return choicesNormalized.split('\n').map((line) => {
     const result = normalizeSceneLine(line);
     return result === null ? '' : result;
   }).join('\n');
 }
 
-function exportDTL() {
+function buildDTL() {
   const scenes = Object.values(project.scenes).map(normalizeDTL);
   if (!scenes.length) {
     window.alert('当前还没有场景内容。');
+    return '';
+  }
+  project.story_bible.variables = fixedVariables();
+  const vars = coreVariableSets();
+  return `${vars ? `${vars}\n\n` : ''}${scenes.join('\n\n')}`;
+}
+
+function safeFileName(name, fallback = 'story') {
+  return String(name || fallback)
+    .trim()
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+    .replace(/\s+/g, '_') || fallback;
+}
+
+async function ensureWritableDirectory(dirHandle) {
+  if (!dirHandle?.queryPermission || !dirHandle?.requestPermission) return true;
+  const options = { mode: 'readwrite' };
+  if ((await dirHandle.queryPermission(options)) === 'granted') return true;
+  return (await dirHandle.requestPermission(options)) === 'granted';
+}
+
+async function selectGodotProject() {
+  if (!window.showDirectoryPicker) {
+    window.alert('当前浏览器不支持选择文件夹，请使用新版 Chrome 或 Edge。');
     return;
   }
-  const vars = (project.story_bible.variables || []).map((item) => `set {${item.name}} = ${item.initial}`).join('\n');
-  const dtl = `${vars ? `${vars}\n\n` : ''}${scenes.join('\n\n')}`;
+  try {
+    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    const writable = await ensureWritableDirectory(dirHandle);
+    if (!writable) {
+      window.alert('没有获得写入权限。');
+      return;
+    }
+    godotProjectDirHandle = dirHandle;
+    godotProjectName.value = dirHandle.name;
+  } catch (err) {
+    if (err.name !== 'AbortError') window.alert(`选择 Godot 项目失败：${err.message}`);
+  }
+}
+
+async function writeDTLToGodotProject(dtl) {
+  const timelinesDir = await godotProjectDirHandle.getDirectoryHandle('timelines', { create: true });
+  const filename = `${safeFileName(project.title)}.dtl`;
+  const fileHandle = await timelinesDir.getFileHandle(filename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(dtl);
+  await writable.close();
+  return `timelines/${filename}`;
+}
+
+async function writeGeneratedImageToGodotProject() {
+  if (!godotProjectDirHandle || !generatedSceneImage.value) return '';
+  const filename = safeFileName(generatedImageFilename.value || `${selectedSceneName.value || 'scene'}.png`, 'scene.png');
+  const savedPath = await saveRemoteImageViaDevServer(generatedSceneImage.value, filename);
+  generatedImageSaved.value = true;
+  sceneImagePath.value = `res://${savedPath}`;
+  return savedPath;
+}
+
+async function saveRemoteImageViaDevServer(url, filename) {
+  const response = await fetch('/api/save-generated-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, filename }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || '本地开发服务器保存图片失败');
+  }
+  if (data.filename) generatedImageFilename.value = data.filename;
+  return data.path;
+}
+
+async function exportDTL() {
+  const dtl = buildDTL();
+  if (!dtl) return;
   writeStorage(DTL_KEY, dtl);
+
+  if (godotProjectDirHandle) {
+    try {
+      const writable = await ensureWritableDirectory(godotProjectDirHandle);
+      if (!writable) {
+        window.alert('没有 Godot 项目目录写入权限，将改为下载 DTL。');
+      } else {
+        const path = await writeDTLToGodotProject(dtl);
+        window.alert(`已导出到 Godot 项目：${path}`);
+        return;
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') window.alert(`写入 Godot 项目失败，将改为下载：${err.message}`);
+    }
+  }
+
   const blob = new Blob([dtl], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${project.title || 'story'}.dtl`;
+  link.download = `${safeFileName(project.title)}.dtl`;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -1044,6 +1304,122 @@ function insertSceneIntoNode() {
   saveProject();
 }
 
+async function runGenerateImagePrompt() {
+  if (!selectedSceneName.value || !ensureAiReady()) return;
+  aiOutputs.imagePrompt = '';
+  generatedSceneImage.value = '';
+  generatedImageSaved.value = false;
+  imageGeneration.error = '';
+  imageGeneration.status = '正在整理场景画面描述...';
+  imageGeneration.progress = 8;
+  try {
+    aiOutputs.imagePrompt = await AIClient.generateImagePrompt(
+      {
+        sceneName: selectedSceneName.value,
+        purpose: sceneContext.purpose,
+        emotion: sceneContext.emotion,
+        sceneText: sceneEditorContent.value || aiOutputs.scene,
+      },
+      project.story_bible,
+      { signal: abortPrevious() },
+    );
+    imageGeneration.progress = 100;
+    imageGeneration.status = '图片提示词已生成';
+  } catch (error) {
+    if (error.name !== 'AbortError') aiOutputs.imagePrompt = `错误：${error.message}`;
+    if (error.name !== 'AbortError') {
+      imageGeneration.error = `提示词生成失败：${error.message}`;
+      imageGeneration.progress = 100;
+    }
+  }
+}
+
+function stopImageProgress() {
+  if (imageProgressTimer) {
+    clearInterval(imageProgressTimer);
+    imageProgressTimer = null;
+  }
+}
+
+function startImageProgress() {
+  stopImageProgress();
+  imageGeneration.running = true;
+  imageGeneration.progress = 3;
+  imageGeneration.status = '正在提交图片生成任务...';
+  imageGeneration.error = '';
+
+  const stages = [
+    { at: 18, text: '正在分析场景光线与构图...' },
+    { at: 38, text: '正在生成背景草图...' },
+    { at: 62, text: '正在细化环境材质...' },
+    { at: 82, text: '正在等待模型返回结果...' },
+  ];
+
+  imageProgressTimer = setInterval(() => {
+    if (imageGeneration.progress >= 92) return;
+    const step = imageGeneration.progress < 35 ? 3 : imageGeneration.progress < 70 ? 2 : 1;
+    imageGeneration.progress = Math.min(92, imageGeneration.progress + step);
+    const stage = stages.findLast((item) => imageGeneration.progress >= item.at);
+    if (stage) imageGeneration.status = stage.text;
+  }, 700);
+}
+
+async function runGenerateSceneImage() {
+  if (!aiOutputs.imagePrompt || !ensureAiReady()) return;
+  saveAiConfig();
+  startImageProgress();
+  try {
+    const imageResult = await AIClient.generateImage(aiOutputs.imagePrompt, { signal: abortPrevious() });
+    generatedSceneImage.value = imageResult.src;
+    generatedImageFilename.value = `bg_${Date.now()}.png`;
+    sceneImagePath.value = `res://assets/backgrounds/${generatedImageFilename.value}`;
+    generatedImageSaved.value = false;
+    if (godotProjectDirHandle) {
+      imageGeneration.status = '正在保存到 Godot 项目...';
+      const savedPath = await writeGeneratedImageToGodotProject();
+      imageGeneration.status = `图片已保存：${savedPath}`;
+    }
+    stopImageProgress();
+    imageGeneration.progress = 100;
+    if (!generatedImageSaved.value) imageGeneration.status = '图片生成完成，可在下方预览';
+  } catch (error) {
+    stopImageProgress();
+    imageGeneration.running = false;
+    imageGeneration.progress = 100;
+    if (error.name !== 'AbortError') imageGeneration.error = `图片生成失败：${error.message}`;
+    return;
+  }
+  imageGeneration.running = false;
+}
+
+function downloadGeneratedSceneImage() {
+  if (!generatedSceneImage.value) return;
+  const link = document.createElement('a');
+  link.href = generatedSceneImage.value;
+  link.target = '_blank';
+  link.download = generatedImageFilename.value || `${selectedSceneName.value || 'scene'}.png`;
+  link.click();
+}
+
+async function insertGeneratedImagePath() {
+  if (!generatedSceneImage.value) return;
+  if (godotProjectDirHandle && !generatedImageSaved.value) {
+    try {
+      const savedPath = await writeGeneratedImageToGodotProject();
+      imageGeneration.status = `图片已保存：${savedPath}`;
+      imageGeneration.error = '';
+    } catch (error) {
+      window.alert(`图片保存失败：${error.message}`);
+      return;
+    }
+  } else if (!godotProjectDirHandle && !generatedImageSaved.value) {
+    window.alert('还没有选择 Godot 项目。请先点顶部「选择 Godot 项目」，或下载图片后手动放入 executor/assets/backgrounds/。');
+    return;
+  }
+  if (!sceneImagePath.value) sceneImagePath.value = `res://assets/backgrounds/${generatedImageFilename.value || `${selectedSceneName.value}.png`}`;
+  insertSceneImage();
+}
+
 function commitSceneEdit() {
   if (!selectedSceneName.value) return;
   const content = sceneEditorContent.value.trim();
@@ -1067,10 +1443,8 @@ function deleteSelectedNode() {
 function playFromHere() {
   if (!selectedSceneName.value) return;
   commitSceneEdit();
-  const scenes = Object.values(project.scenes).filter(Boolean).map(normalizeDTL);
-  const variables = project.story_bible?.variables || [];
-  const vars = variables.map((v) => `set {${v.name}} = ${v.initial ?? 0}`).join('\n');
-  const dtl = `${vars ? `${vars}\n\n` : ''}${scenes.join('\n\n')}`;
+  const dtl = buildDTL();
+  if (!dtl) return;
   writeStorage(DTL_KEY, dtl);
   router.push({ path: '/player', query: { from: selectedSceneName.value } });
 }
@@ -1148,6 +1522,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   graphEditor = null;
+  stopImageProgress();
   window.removeEventListener('keydown', onKeyDown);
 });
 </script>
@@ -1355,6 +1730,25 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
+.scene-asset-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.scene-asset-tools label {
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.fade-input {
+  width: 76px;
+  flex: 0 0 76px;
+}
+
 .scene-editor-name {
   font-size: 11px;
   color: var(--ink-faint);
@@ -1403,6 +1797,11 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
+}
+
+.section-note {
+  color: var(--ink-faint);
+  font-size: 11px;
 }
 
 .stack {
@@ -1493,6 +1892,51 @@ onBeforeUnmount(() => {
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1.7;
+}
+
+.generated-image {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(240, 226, 198, 0.03);
+}
+
+.image-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(240, 226, 198, 0.03);
+}
+
+.image-progress-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
+.image-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(240, 226, 198, 0.08);
+}
+
+.image-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.35s ease;
+}
+
+.image-progress-bar.err {
+  background: var(--err);
 }
 
 :deep(.drawflow .connection .main-path) {

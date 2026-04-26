@@ -2,3 +2,6 @@
 Thumbs.db
 node_modules/
 .claude/worktrees/
+.env
+.env.*
+!.env.example

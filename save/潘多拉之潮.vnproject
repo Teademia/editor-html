@@ -1,0 +1,363 @@
+{
+  "__version": 1,
+  "project": {
+    "title": "潘多拉之潮",
+    "story_bible": {
+      "opening": "公元2037年，GenerationGene 公司与 CloseAI 公司联合重设计海洋微生物 SAR11，试图重构全球碳循环并制造高密度生物能源。泄漏发生后，SAR11 在十四天内覆盖南极冰架，引发不可逆的融化与全球海平面暴涨，暗红色海潮吞没世界。\n\n玩家扮演楚云天，灾变初期的海洋微生物与气候工程研究员。他最先意识到 SAR11 不只是污染，而是一个正在改写海洋生态、陆地生物和国家秩序的生命系统。为了阻止文明沉没，他必须从实验室走向权力中心，整合科研、军工、外交和民众动员，带领国家穿过潘多拉之潮。",
+      "target_words": 200000,
+      "world": {
+        "setting": "近未来海洋灾变科幻。2037 年后，SAR11 变异体重塑全球海洋生态，南极融化、暗红潮汐、沿海城市沉没，旧世界的能源、粮食、交通和国家边界被迫重组。塔罗斯海原名太平洋，是灾厄七大洋之一，海中出现由变异生物群落组成的巨型复合生命体，如水蛭鲸、浮藻城、珊瑚神经网。",
+        "rules": "1. SAR11 不是单一病原体，而是会与宿主生态共生、驱动突变的微生物网络。\n2. 被 SAR11 高浓度污染的海域会形成群体意志般的生态反馈，但它不等同于人类意义上的智慧。\n3. 国家仍存在，但沿海失守后权力重心转入内陆、地下城、海上平台和高原工业带。\n4. 科研突破必须依赖样本、算力、时间、政治信任和公众配合，任何一项不足都会导致防线崩溃。\n5. 玩家选择会改变科研路线、政权稳定度、民众信任、军事化程度和最终文明形态。",
+        "tone": "宏大灾变、硬科幻、政治决策与个人牺牲并重。恐怖场面强调生态异化和生理压迫，国家线强调制度、资源和人心的重量。主角不是天选救世主，而是一步步被现实推上领导位置的人。"
+      },
+      "protagonist": {
+        "name": "楚云天",
+        "personality": ["理性", "冷静", "责任感强", "克制", "不愿服输"],
+        "motivation": "证明 SAR11 灾变仍可被理解和控制，保护自己的国家与幸存者，让文明不被海潮吞没。",
+        "flaw": "过度相信理性模型，早期低估政治阻力和民众恐惧，习惯把危机当作科研问题而不是社会问题。"
+      },
+      "variables": [
+        { "name": "research", "initial": 4, "min": 0, "max": 10 },
+        { "name": "authority", "initial": 1, "min": 0, "max": 10 },
+        { "name": "public_trust", "initial": 3, "min": 0, "max": 10 },
+        { "name": "military_control", "initial": 2, "min": 0, "max": 10 },
+        { "name": "ecology_understanding", "initial": 2, "min": 0, "max": 10 },
+        { "name": "humanity_cost", "initial": 0, "min": 0, "max": 10 }
+      ],
+      "endings": [
+        {
+          "title": "蓝色防线",
+          "condition": "research >= 8 && public_trust >= 7 && humanity_cost <= 5",
+          "description": "楚云天建立可持续的海陆防线，SAR11 被限制在可监控生态圈内。国家虽付出惨重代价，却保住了制度、人口和未来。"
+        },
+        {
+          "title": "钢铁方舟",
+          "condition": "authority >= 8 && military_control >= 8 && humanity_cost >= 6",
+          "description": "国家以高度军事化方式幸存，海潮被挡在要塞之外，但自由与旧日生活被一并封存。楚云天赢得战争，也失去了最初想保护的东西。"
+        },
+        {
+          "title": "与潮共生",
+          "condition": "ecology_understanding >= 8 && research >= 6 && public_trust >= 5",
+          "description": "楚云天发现 SAR11 可被引导而非彻底消灭，人类文明转向半海洋化共生路线，国家成为新生态秩序的设计者。"
+        },
+        {
+          "title": "红潮亡国",
+          "condition": "research < 5 || public_trust < 3",
+          "description": "科研停滞或社会信任崩塌，谣言、迁徙和水源污染击穿国家防线。暗红色海潮越过最后一道高原堤坝。"
+        },
+        {
+          "title": "潘多拉之王",
+          "condition": "authority >= 9 && ecology_understanding >= 8 && humanity_cost >= 8",
+          "description": "楚云天掌握了驱动 SAR11 群落的方法，成为灾后世界事实上的统治者。但人类是否仍在被拯救，已经无人敢问。"
+        }
+      ]
+    },
+    "structure": {
+      "template": "save_the_cat",
+      "branching_beat_id": "midpoint",
+      "beats": [
+        { "id": "opening", "name": "开场", "pct": 10, "desc": "建立世界、角色和问题底色", "block_id": "block_1" },
+        { "id": "catalyst", "name": "催化事件", "pct": 20, "desc": "打破稳定状态的关键刺激", "block_id": "block_2" },
+        { "id": "debate", "name": "犹疑与试探", "pct": 30, "desc": "主角犹豫、试探、寻找方向", "block_id": "block_3" },
+        { "id": "break2", "name": "进入新阶段", "pct": 40, "desc": "主角正式进入主冲突", "block_id": "block_4" },
+        { "id": "fun_games", "name": "展开与兑现", "pct": 55, "desc": "核心设定与矛盾被持续兑现", "block_id": "block_5" },
+        { "id": "midpoint", "name": "中点转折", "pct": 65, "desc": "局势逆转或目标发生变化", "block_id": "block_6" },
+        { "id": "bad_guys", "name": "压力升级", "pct": 75, "desc": "外部和内部阻力同时加强", "block_id": "block_7" },
+        { "id": "dark_night", "name": "最低谷", "pct": 85, "desc": "主角面对失败、怀疑和代价", "block_id": "block_8" },
+        { "id": "break3", "name": "反弹与决断", "pct": 92, "desc": "主角重新做出选择", "block_id": "block_9" },
+        { "id": "finale", "name": "终局", "pct": 98, "desc": "完成最终冲突并落到结局", "block_id": "block_10" }
+      ]
+    },
+    "blocks": [
+      {
+        "id": "block_1",
+        "beat_id": "opening",
+        "title": "水蛭鲸之口",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "以楚云天从水蛭鲸口中苏醒作为强钩子，展示塔罗斯海的生态异化，并转入灾前档案，建立 SAR11 与潘多拉之潮的基本设定。",
+          "emotion_curve": [["窒息", 0.2], ["惊惧", 0.45], ["求生", 0.7], ["冷静回忆", 0.9]],
+          "input_state": { "location": "塔罗斯海，水蛭鲸体内", "variables": { "research": 4, "authority": 1, "public_trust": 3 } },
+          "foreshadow_collect": [],
+          "foreshadow_plant": ["水蛭鲸并非捕食者，而是在执行某种生态清理行为", "SAR11 对陆生吸血生物的改造能力", "楚云天曾参与过 SAR11 风险评估"],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "逃出水蛭鲸时",
+              "reason": "建立玩家的第一组价值取向：保全样本还是保全自己",
+              "options": [
+                { "text": "割开防护服取出活体样本", "effect": "research += 1, humanity_cost += 1" },
+                { "text": "立刻逃向光缝", "effect": "public_trust += 1" }
+              ]
+            }
+          ],
+          "outcomes": ["楚云天逃离水蛭鲸", "确认塔罗斯海生态已发生复合突变", "引出四海纪元档案与灾变源头"]
+        },
+        "skeleton": "1. 楚云天在黑暗、湿滑、粘稠的环境中苏醒，误以为自己身处洞穴。\n2. 他被水蛭咬伤，凭专业知识判断这些水蛭不是自然演化物种。\n3. 天地震动，水蛭鲸张口换气，灰色天空和塔罗斯海显露。\n4. 楚云天意识到自己身处由无数水蛭编织成的鲸鱼口腔。\n5. [选择点·作者] 保留活体样本或优先逃生。\n6. 他借助水蛭鲸张口的瞬间逃出，落入漂浮残骸。\n7. 残骸上的旧终端自动播放《四海纪元档案》。\n8. 档案揭示 2037 年 SAR11 泄漏、南极暗红生物膜和潘多拉之潮。\n9. 楚云天回忆自己曾是 SAR11 风险评估组成员，却被公司与上级压下报告。\n10. 远处海面再次隆起，更多复合生命体向沿海方向移动。",
+        "output_state": { "location": "塔罗斯海漂浮残骸", "variables": { "research": 5 }, "open_foreshadows": ["水蛭鲸的生态清理行为", "被压下的风险评估报告"] }
+      },
+      {
+        "id": "block_2",
+        "beat_id": "catalyst",
+        "title": "十四天融化南极",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "回到灾变初期，楚云天试图向国家预警，但企业、部门和国际舆论都在压制真相。南极十四天崩解成为无法否认的催化事件。",
+          "emotion_curve": [["怀疑", 0.2], ["焦急", 0.45], ["愤怒", 0.65], ["警报", 0.9]],
+          "input_state": { "location": "2037 年，国家海洋生物安全中心", "variables": { "research": 4, "authority": 1, "public_trust": 3 } },
+          "foreshadow_collect": ["被压下的风险评估报告"],
+          "foreshadow_plant": ["CloseAI 超算系统依赖 SAR11 生物能源", "GenerationGene 内部有人主动掩盖泄漏", "首都地下应急工程蓝图"],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "第一次内部听证会",
+              "reason": "决定楚云天是走制度路线还是公开路线",
+              "options": [
+                { "text": "提交完整模型，等待上级批准", "effect": "authority += 1, public_trust -= 1" },
+                { "text": "匿名向媒体释放部分数据", "effect": "public_trust += 2, authority -= 1" }
+              ]
+            }
+          ],
+          "outcomes": ["南极暗红化被全球确认", "楚云天成为少数提前预警成功的人", "国家开始把他纳入紧急决策圈"]
+        },
+        "skeleton": "1. 楚云天在中心实验室发现 SAR11 样本代谢曲线异常。\n2. 他提交风险模型，指出南极冰架可能在两周内失稳。\n3. GenerationGene 代表否认泄漏，并要求封存模型。\n4. [选择点·作者] 走内部审批或匿名公开数据。\n5. 南极卫星图出现暗红色扩散斑块，起初被解释为仪器误差。\n6. 第七天，极地科考站失联，海水温度异常上升。\n7. 第十四天，南极大面积崩解，海平面模型全面失效。\n8. 楚云天被紧急带往国家危机会议室。\n9. 一名老院士提醒他：从今天起，科学结论必须能承受政治后果。\n10. 红潮登陆第一座沿海城市。",
+        "output_state": { "location": "国家危机会议室", "variables": { "authority": 2 }, "open_foreshadows": ["CloseAI 生物能源依赖", "地下应急工程蓝图"] }
+      },
+      {
+        "id": "block_3",
+        "beat_id": "debate",
+        "title": "撤离令与封城令",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "主角第一次面对科研判断转化为国家命令的痛苦：沿海撤离、封城、粮食配给和舆论安抚互相冲突。",
+          "emotion_curve": [["压抑", 0.2], ["争执", 0.45], ["犹疑", 0.65], ["承担", 0.9]],
+          "input_state": { "location": "东部沿海联合指挥部", "variables": { "authority": 2, "public_trust": 3, "military_control": 2 } },
+          "foreshadow_collect": ["地下应急工程蓝图"],
+          "foreshadow_plant": ["内陆高原工业带可以改造为长期文明核心", "民众对科研机构的信任裂痕", "军方提出海岸焦土方案"],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "沿海城市决策",
+              "reason": "建立国家治理线的核心取舍",
+              "options": [
+                { "text": "强制提前撤离", "effect": "military_control += 2, public_trust -= 1, humanity_cost += 1" },
+                { "text": "公开风险并组织自愿撤离", "effect": "public_trust += 2, authority -= 1" }
+              ]
+            }
+          ],
+          "outcomes": ["第一批沿海人口向内陆迁移", "楚云天开始理解社会系统比生态模型更难预测", "玩家路线分化为强管控或高信任"]
+        },
+        "skeleton": "1. 指挥部收到多个沿海城市下水道反涌红潮的报告。\n2. 楚云天提出 72 小时内撤离低海拔区域。\n3. 地方负责人担心恐慌和经济崩溃，要求推迟公告。\n4. 军方代表提出封锁交通节点，避免污染扩散。\n5. [选择点·作者] 强制撤离或公开风险。\n6. 玩家选择导致不同城市出现踩踏、秩序井然或舆论反噬。\n7. 楚云天亲眼看见医院转运车被海潮追上。\n8. 他第一次签署带有死亡后果的科学建议。\n9. 内陆高原工业带方案被提上议程。\n10. 海岸线后退，国家进入战时科研体制。",
+        "output_state": { "location": "战时科研委员会", "variables": { "authority": 3 }, "open_foreshadows": ["高原工业带", "海岸焦土方案"] }
+      },
+      {
+        "id": "block_4",
+        "beat_id": "break2",
+        "title": "战时科研委员会",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "楚云天正式进入国家核心决策层，建立跨部门科研体系，开始同时推进抑制剂、防潮工程和生态情报采样。",
+          "emotion_curve": [["紧绷", 0.25], ["希望", 0.45], ["冲突", 0.65], ["决断", 0.9]],
+          "input_state": { "location": "首都地下指挥中心", "variables": { "research": 5, "authority": 3 } },
+          "foreshadow_collect": ["高原工业带"],
+          "foreshadow_plant": ["一份来自 CloseAI 的异常算力申请", "西南深井样本库", "楚云天的学生沈栀将成为关键助手"],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "科研资源分配",
+              "reason": "决定后续科研路线偏工程防御还是生态理解",
+              "options": [
+                { "text": "优先开发 SAR11 抑制剂", "effect": "research += 2, ecology_understanding += 1" },
+                { "text": "优先建设高原防潮工业带", "effect": "authority += 2, public_trust += 1" }
+              ]
+            }
+          ],
+          "outcomes": ["战时科研委员会成立", "楚云天获得实际调配权", "科研路线出现分支"]
+        },
+        "skeleton": "1. 首都地下指挥中心启用，楚云天被任命为首席科学顾问。\n2. 他要求打通海洋、生物、气候、军工和交通数据。\n3. 老官员质疑一个研究员是否有资格影响国家迁徙。\n4. 沈栀带来最新样本：SAR11 已能影响淡水藻类。\n5. [选择点·作者] 优先抑制剂或高原工业带。\n6. CloseAI 提出借用国家算力训练预测模型，条件含糊。\n7. 楚云天发现他们隐瞒了早期能源项目参数。\n8. 第一座内陆防潮城开工，沿海民众开始涌入。\n9. 红潮中的生物群落表现出绕开防线的趋势。\n10. 委员会决定组织塔罗斯海采样行动。",
+        "output_state": { "location": "首都地下指挥中心", "variables": { "authority": 4, "research": 6 }, "open_foreshadows": ["CloseAI 异常算力申请", "西南深井样本库", "沈栀"] }
+      },
+      {
+        "id": "block_5",
+        "beat_id": "fun_games",
+        "title": "七大洋样本",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "展开核心设定：灾厄七大洋各有不同生态突变，楚云天需要用有限资源获取样本，拼出 SAR11 的真实行为模式。",
+          "emotion_curve": [["探索", 0.25], ["震撼", 0.5], ["损失", 0.7], ["突破", 0.9]],
+          "input_state": { "location": "塔罗斯海采样舰队", "variables": { "research": 6, "ecology_understanding": 2 } },
+          "foreshadow_collect": ["水蛭鲸的生态清理行为"],
+          "foreshadow_plant": ["SAR11 会主动消灭高熵污染源", "海中存在类似神经网络的珊瑚群", "国际联盟准备夺取中国样本库"],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "舰队遭遇水蛭鲸群",
+              "reason": "选择是消灭威胁还是尝试理解威胁",
+              "options": [
+                { "text": "命令火力驱散水蛭鲸", "effect": "military_control += 1, ecology_understanding -= 1" },
+                { "text": "保持距离并记录行为", "effect": "ecology_understanding += 2, humanity_cost += 1" }
+              ]
+            }
+          ],
+          "outcomes": ["获得七大洋初始样本", "发现 SAR11 生态并非纯粹随机", "国家防线开始遭遇国际与生态双重压力"]
+        },
+        "skeleton": "1. 采样舰队进入塔罗斯海，海面漂浮着旧城市残骸。\n2. 楚云天观察到水蛭鲸吞噬的是被工业废料污染的船体。\n3. [选择点·作者] 火力驱散或记录行为。\n4. 另一支队伍在南冰洋发现暗红生物膜会修复自身裂缝。\n5. 印度洋方向出现会诱导鱼群自毁的微生物云。\n6. 沈栀将样本拼合后，发现它们共享代谢信号。\n7. 国际联盟要求中国公开全部样本数据。\n8. CloseAI 私下提出可用超算换取样本优先权。\n9. 楚云天拒绝交出未经验证的生态密钥。\n10. 珊瑚神经网向采样器发送了规律性脉冲。",
+        "output_state": { "location": "国家样本库", "variables": { "ecology_understanding": 4 }, "open_foreshadows": ["珊瑚神经网", "国际夺取样本库"] }
+      },
+      {
+        "id": "block_6",
+        "beat_id": "midpoint",
+        "title": "潮声不是噪音",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "中点转折：楚云天发现 SAR11 群落信号不是噪音，而是生态反馈协议。危机从消灭对象转变为可谈判、可诱导、也可被滥用的系统。",
+          "emotion_curve": [["疲惫", 0.2], ["顿悟", 0.45], ["狂喜", 0.6], ["恐惧", 0.9]],
+          "input_state": { "location": "西南深井样本库", "variables": { "research": 6, "ecology_understanding": 4 } },
+          "foreshadow_collect": ["西南深井样本库", "珊瑚神经网"],
+          "foreshadow_plant": ["可诱导 SAR11 绕开人类聚居区", "CloseAI 已尝试用同协议控制潮汐", "楚云天可能成为政治权力核心"],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "发现生态协议后",
+              "reason": "决定是否公开这一足以改写战争的发现",
+              "options": [
+                { "text": "立即上报并公开科研结论", "effect": "public_trust += 2, authority -= 1" },
+                { "text": "先封存协议，只交给核心层", "effect": "authority += 2, humanity_cost += 1" }
+              ]
+            }
+          ],
+          "outcomes": ["确认 SAR11 生态协议存在", "故事主目标从单纯防御转为掌控或共生", "分支路线正式打开"]
+        },
+        "skeleton": "1. 楚云天在深井样本库复盘七大洋信号。\n2. 沈栀指出所谓噪音与海流、污染源、人口密度存在同步关系。\n3. 楚云天用早年被压下的模型重新计算，发现水蛭鲸在清除污染而非捕猎。\n4. 珊瑚神经网回应实验室刺激，改变局部微生物扩散方向。\n5. [选择点·作者] 公开协议或封存协议。\n6. CloseAI 异常算力申请被证明与相同协议有关。\n7. 有人建议楚云天担任国家灾变总协调人。\n8. 反对派担心科学家掌握不可监督的生态武器。\n9. 红潮突然绕开一座高原城市，像是在回应某个信号。\n10. 楚云天意识到，潘多拉的盒子已经不可能关上。",
+        "output_state": { "location": "国家灾变总协调办公室", "variables": { "ecology_understanding": 6, "authority": 5 }, "open_foreshadows": ["CloseAI 控潮尝试", "生态协议公开与否"] }
+      },
+      {
+        "id": "block_7",
+        "beat_id": "bad_guys",
+        "title": "算力叛乱",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "外部压力升级：CloseAI 与跨国资本试图夺取生态协议，国内也出现要求全面军事化的派系。楚云天必须在开放、控制和战争之间做选择。",
+          "emotion_curve": [["警惕", 0.25], ["背叛", 0.5], ["对抗", 0.75], ["孤立", 0.95]],
+          "input_state": { "location": "国家超算中心与高原防线", "variables": { "authority": 5, "public_trust": 5 } },
+          "foreshadow_collect": ["CloseAI 控潮尝试", "国际夺取样本库"],
+          "foreshadow_plant": ["内部强硬派准备绕过楚云天", "沈栀质疑主角是否正在变成另一个 CloseAI", "红潮可被诱导攻击敌方港口"],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "CloseAI 发起数据入侵时",
+              "reason": "决定主角权力形态",
+              "options": [
+                { "text": "全国断网，军事接管算力中心", "effect": "military_control += 3, authority += 1, public_trust -= 2" },
+                { "text": "公开入侵证据，发动科研共同体反击", "effect": "public_trust += 2, research += 1, authority -= 1" }
+              ]
+            }
+          ],
+          "outcomes": ["CloseAI 成为明确对手", "国内路线冲突白热化", "楚云天的领导权受到挑战"]
+        },
+        "skeleton": "1. 国家超算中心出现异常任务，占用资源模拟红潮流向。\n2. 楚云天追踪到 CloseAI 的影子账号。\n3. 国际联盟舰队接近样本库外海，声称执行人道监督。\n4. 国内强硬派要求把生态协议转化为武器。\n5. [选择点·作者] 军事接管算力或公开入侵证据。\n6. 沈栀质问楚云天：如果你也用红潮威胁别人，和他们有什么不同。\n7. 强硬派绕过委员会，下令测试诱导红潮冲击敌方无人港。\n8. 测试成功，但附近难民船被卷入。\n9. 民众信任出现裂缝，反科研游行爆发。\n10. 高原防线外，暗红海潮开始堆积成墙。",
+        "output_state": { "location": "高原防线", "variables": { "military_control": 5, "humanity_cost": 3 }, "open_foreshadows": ["强硬派绕过楚云天", "沈栀的质疑"] }
+      },
+      {
+        "id": "block_8",
+        "beat_id": "dark_night",
+        "title": "最后一座沿海城",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "最低谷：最后一座沿海大型城市失守，楚云天的方案造成无法回避的牺牲。他必须面对自己是否还有资格领导国家。",
+          "emotion_curve": [["重压", 0.25], ["灾难", 0.55], ["崩溃", 0.8], ["空白", 1.0]],
+          "input_state": { "location": "临海城撤离线", "variables": { "public_trust": 5, "humanity_cost": 3 } },
+          "foreshadow_collect": ["强硬派绕过楚云天", "沈栀的质疑"],
+          "foreshadow_plant": ["沈栀保留了一份不完全共生方案", "临海城幸存者将决定公众信任", "楚云天可以选择辞职或夺权"],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "临海城撤离失败时",
+              "reason": "最低谷的道德选择",
+              "options": [
+                { "text": "牺牲外环防线，保住主城区撤离通道", "effect": "public_trust += 1, humanity_cost += 2" },
+                { "text": "执行封锁，阻止污染进入内陆", "effect": "military_control += 2, humanity_cost += 3, public_trust -= 2" }
+              ]
+            }
+          ],
+          "outcomes": ["临海城失守", "楚云天承受最大舆论和道德压力", "最终路线前的价值清算完成"]
+        },
+        "skeleton": "1. 临海城是最后一座仍在运转的沿海大型城市。\n2. 楚云天判断红潮将在 18 小时内突破外港。\n3. 强硬派此前的诱导测试改变了海流，使撤离窗口缩短。\n4. [选择点·作者] 牺牲外环救人或封锁污染。\n5. 玩家选择导致不同规模的死亡和信任崩塌。\n6. 沈栀带着污染样本进入撤离列车，险些死亡。\n7. 她交给楚云天一份共生方案：不是消灭 SAR11，而是让它重新定义安全边界。\n8. 舆论要求楚云天下台，军方要求他交出协议权限。\n9. 楚云天在空荡的指挥室里重看最初的水蛭鲸影像。\n10. 他意识到自己一直在问如何战胜海洋，却没有问如何让海洋停止把人类视为污染。",
+        "output_state": { "location": "空荡的国家指挥室", "variables": { "humanity_cost": 5 }, "open_foreshadows": ["共生方案", "辞职或夺权"] }
+      },
+      {
+        "id": "block_9",
+        "beat_id": "break3",
+        "title": "国家不是实验室",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "反弹与决断：楚云天接受国家治理不是单纯科学问题，重新整合民众、军方、科研共同体和生态协议，确定最终战略。",
+          "emotion_curve": [["清醒", 0.25], ["坦白", 0.45], ["重组", 0.7], ["决断", 0.95]],
+          "input_state": { "location": "全国公开听证会", "variables": { "authority": 6, "public_trust": 4, "ecology_understanding": 6 } },
+          "foreshadow_collect": ["共生方案", "辞职或夺权"],
+          "foreshadow_plant": ["最终潮汐诱导窗口只有 37 分钟", "首都高原防线将承受最大冲击", "楚云天可能牺牲自己接入生态协议"],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "全国公开听证会",
+              "reason": "确定最终路线",
+              "options": [
+                { "text": "公开全部错误和生态协议，换取民众参与", "effect": "public_trust += 3, authority -= 1" },
+                { "text": "接管灾变总权力，执行最终方案", "effect": "authority += 3, military_control += 2, humanity_cost += 1" }
+              ]
+            }
+          ],
+          "outcomes": ["最终方案确定", "玩家路线锁定为蓝色防线、钢铁方舟或与潮共生", "所有伏笔进入终局回收"]
+        },
+        "skeleton": "1. 楚云天拒绝私下辞职，要求召开全国公开听证会。\n2. 他承认临海城方案中的错误，也解释没有选择时的代价。\n3. 沈栀公开共生方案，指出可用低熵生态带诱导红潮改道。\n4. 军方要求保留最终武力控制权。\n5. [选择点·作者] 公开协议换信任或接管权力保效率。\n6. 民众代表、军方、科研共同体分别给出条件。\n7. 楚云天第一次把国家视作一个需要共同理解的生命系统。\n8. 最终潮汐诱导窗口被计算出来：37 分钟。\n9. 高原防线、深井样本库、超算中心同步进入倒计时。\n10. 暗红海墙抵达首都外缘。",
+        "output_state": { "location": "首都高原防线", "variables": { "authority": 7, "public_trust": 6 }, "open_foreshadows": ["37 分钟窗口", "接入生态协议"] }
+      },
+      {
+        "id": "block_10",
+        "beat_id": "finale",
+        "title": "蓝色黎明或红色王冠",
+        "status": "skeleton_done",
+        "word_target": 20000,
+        "design": {
+          "purpose": "终局：楚云天在高原防线完成最终诱导、抑制或控制 SAR11 的方案，根据变量进入不同结局。",
+          "emotion_curve": [["紧迫", 0.3], ["牺牲", 0.55], ["高潮", 0.8], ["余波", 1.0]],
+          "input_state": { "location": "首都高原防线与生态协议中枢", "variables": { "research": 8, "authority": 7, "public_trust": 6, "ecology_understanding": 7 } },
+          "foreshadow_collect": ["37 分钟窗口", "接入生态协议", "SAR11 会主动消灭高熵污染源"],
+          "foreshadow_plant": [],
+          "choice_points": [
+            {
+              "source": "author",
+              "position_hint": "最终执行方案",
+              "reason": "终局价值选择",
+              "options": [
+                { "text": "执行蓝色防线：抑制并隔离红潮", "effect": "research += 1, humanity_cost += 1" },
+                { "text": "执行共生协议：让 SAR11 绕开人类聚居区", "effect": "ecology_understanding += 2, public_trust += 1" },
+                { "text": "执行王冠协议：强制控制红潮反击敌方", "effect": "authority += 2, humanity_cost += 3" }
+              ]
+            }
+          ],
+          "outcomes": ["根据变量进入多结局", "楚云天完成从科研人员到国家领导者的转变", "潘多拉之潮进入新的历史阶段"]
+        },
+        "skeleton": "1. 暗红海墙撞上首都高原防线，地下城开始渗水。\n2. 楚云天、沈栀、军方和超算中心同步执行最终方案。\n3. CloseAI 试图最后一次抢占生态协议端口。\n4. 水蛭鲸群出现在海墙前，开始吞噬高污染流。\n5. [选择点·作者] 蓝色防线、共生协议或王冠协议。\n6. 若科研与信任足够，红潮被引导进入新生态缓冲带。\n7. 若军事与权力占优，国家以铁腕方式控制红潮，但代价巨大。\n8. 若理解足够，SAR11 开始绕开人类聚居区，人类进入共生纪元。\n9. 若准备不足，首都防线崩塌，红潮亡国。\n10. 余波中，楚云天面对新的海平线：他拯救的国家，已经不再是旧世界的国家。",
+        "output_state": { "location": "新纪元海岸线", "variables": {}, "open_foreshadows": [] }
+      }
+    ],
+    "scenes": {}
+  },
+  "ai_config": {
+    "baseUrl": "https://api.deepseek.com/v1",
+    "model": "deepseek-chat",
+    "apiKey": "",
+    "maxTokens": 4096,
+    "temperature": 0.85
+  }
+}

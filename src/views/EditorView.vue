@@ -54,7 +54,7 @@
 
               <div class="field">
                 <label>显示条件</label>
-                <input v-model="choice.condition" class="input mono" type="text" placeholder="{courage} >= 3" />
+                <input v-model="choice.condition" class="input mono" type="text" placeholder="{文化} >= 3" />
               </div>
 
               <div class="field">
@@ -129,10 +129,10 @@ import { dtlFromScenes, scenesFromDTL } from '../utils/dtlEngine';
 import { DTL_KEY, readStorage, writeStorage } from '../utils/storage';
 
 const DEFAULT_DTL = `# The Ember Tavern
-set {gold} = 12
-set {courage} = 3
-set {has_dagger} = false
-set {knows_secret} = false
+set {经济} = 0
+set {科技} = 0
+set {文化} = 0
+set {政治} = 0
 
 label tavern_door
 雨像针一样砸在石板路上。Ember 客栈的百叶窗缝里漏出昏黄的光，里面传来木柴烟和肉汤的味道。你的外套已经湿透了。
@@ -141,37 +141,37 @@ label tavern_door
 - 跨进门，把门在身后推上。
 \tjump taproom
 - 站在门口先打量一下屋里。
-\tset {courage} -= 1
+\tset {文化} -= 1
 \tjump taproom
 - 转身走回风雨里。
 \tjump storm_out
 
 label taproom
 酒馆里的暖意几乎让你的眼睛起雾。后墙的壁炉轰隆作响。
-set {gold} -= 1
+set {经济} -= 1
 酒保: 麦酒四铜板，炖菜六个。楼上有床铺，如果你运气够好的话。
 - 靠到吧台边。
 \tjump at_the_bar
 - 走到壁炉前烤火。
 \tjump the_hearth
-- 慢慢挪到角落桌附近偷听。 | [if {courage} >= 3]
+- 慢慢挪到角落桌附近偷听。 | [if {文化} >= 3]
 \tjump eavesdrop
 
 label the_hearth
 火烧得够大声。铁架旁边，露出一把匕首的尖。
 - 趁没人看见把它揣进怀里。
-\tset {has_dagger} = true
-\tset {courage} += 1
+\tset {政治} += 1
+\tset {文化} += 1
 \tjump taproom
 - 别碰，不关你的事。
 \tjump taproom
 
 label eavesdrop
 戴兜帽的男人: ……货物在第三更的钟声时走。
-set {knows_secret} = true
+set {科技} += 1
 你脚下一块木板吱呀一声。三颗脑袋同时转了过来。
 - 笑一笑，假装是掉了一枚铜板。
-\tset {gold} -= 1
+\tset {经济} -= 1
 \tjump taproom
 - 直接冲向大门。
 \tjump storm_out

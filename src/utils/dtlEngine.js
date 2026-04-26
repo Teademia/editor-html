@@ -1,3 +1,5 @@
+import { CORE_VARIABLES, isCoreVariable } from './variables.js';
+
 function measureIndent(raw) {
   let count = 0;
   for (const ch of raw) {
@@ -13,6 +15,36 @@ function parseLine(stripped, indent) {
 
   // Strip [block_N] markers (used as block-type comments, not valid DTL)
   if (/^\[block_\w+\]$/.test(stripped)) return null;
+  if (/^\{[^}]+(?:=|\+=|-=|\*=|\/=)[^}]*\}$/.test(stripped)) return null;
+  const bracketNameSetMatch = stripped.match(/^\[([^\]]+)\]\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
+  if (bracketNameSetMatch) {
+    if (!isCoreVariable(bracketNameSetMatch[1])) return null;
+    return {
+      type: 'set',
+      varname: bracketNameSetMatch[1],
+      op: bracketNameSetMatch[2],
+      value: numericSetValue(bracketNameSetMatch[3]),
+      indent,
+    };
+  }
+
+  const backgroundMatch = stripped.match(/^\[background\s+(.+)\]$/);
+  if (backgroundMatch) {
+    const params = {};
+    for (const match of backgroundMatch[1].matchAll(/([A-Za-z_]\w*)="([^"]*)"/g)) {
+      params[match[1]] = match[2];
+    }
+    return {
+      type: 'background',
+      arg: params.arg || '',
+      scene: params.scene || '',
+      fade: params.fade || '0',
+      transition: params.transition || '',
+      indent,
+    };
+  }
+
+  if (/^\[[^\]]+(?:=|\+=|-=|\*=|\/=)[^\]]*\]$/.test(stripped) && !stripped.startsWith('[set ')) return null;
 
   if (stripped.startsWith('label ')) {
     return { type: 'label', name: stripped.slice(6).trim().split(/\s/)[0], indent };
@@ -29,6 +61,7 @@ function parseLine(stripped, indent) {
   // Handle [set varname op value] bracketed format → normalize to set event
   const bracketSetMatch = stripped.match(/^\[set\s+\{?([^}=+\-*\/\s\]]+)\}?\s*(=|\+=|-=|\*=|\/=)\s*([^\]]+)\]$/);
   if (bracketSetMatch) {
+    if (!isCoreVariable(bracketSetMatch[1])) return null;
     return {
       type: 'set',
       varname: bracketSetMatch[1],
@@ -40,6 +73,7 @@ function parseLine(stripped, indent) {
 
   const setMatch = stripped.match(/^set\s+\{?([^}=+\-*\/\s]+)\}?\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
   if (setMatch) {
+    if (!isCoreVariable(setMatch[1])) return null;
     return {
       type: 'set',
       varname: setMatch[1],
@@ -50,20 +84,21 @@ function parseLine(stripped, indent) {
   }
 
   const ifMatch = stripped.match(/^if\s+(.+):$/);
-  if (ifMatch) return { type: 'if', condition: ifMatch[1], indent };
+  if (ifMatch) return hasInvalidConditionVariable(ifMatch[1]) ? null : { type: 'if', condition: ifMatch[1], indent };
 
   const elifMatch = stripped.match(/^elif\s+(.+):$/);
-  if (elifMatch) return { type: 'elif', condition: elifMatch[1], indent };
+  if (elifMatch) return hasInvalidConditionVariable(elifMatch[1]) ? null : { type: 'elif', condition: elifMatch[1], indent };
 
   if (stripped === 'else:') return { type: 'else', indent };
   if (stripped === 'end') return { type: 'end', indent };
 
   if (stripped.startsWith('- ')) {
     const choiceMatch = stripped.match(/^-\s+(.+?)(?:\s*\|\s*\[if\s+(.+?)\])?$/);
+    const condition = (choiceMatch && choiceMatch[2] ? choiceMatch[2] : '').trim();
     return {
       type: 'choice',
       text: (choiceMatch ? choiceMatch[1] : stripped.slice(2)).trim(),
-      condition: (choiceMatch && choiceMatch[2] ? choiceMatch[2] : '').trim(),
+      condition: hasInvalidConditionVariable(condition) ? '' : condition,
       indent,
     };
   }
@@ -87,6 +122,23 @@ function parseLine(stripped, indent) {
     body: base.replace(/\\:/g, ':'),
     indent,
   };
+}
+
+function hasInvalidConditionVariable(condition) {
+  for (const name of String(condition || '').matchAll(/\{([^}]+)\}/g)) {
+    if (!isCoreVariable(name[1])) return true;
+  }
+  const withoutStrings = String(condition || '').replace(/(['"]).*?\1/g, '');
+  for (const [token] of withoutStrings.matchAll(/[A-Za-z_\u4e00-\u9fa5][\w\u4e00-\u9fa5]*/g)) {
+    if (['true', 'false', 'and', 'or', 'not'].includes(token)) continue;
+    if (!CORE_VARIABLES.includes(token)) return true;
+  }
+  return false;
+}
+
+function numericSetValue(raw) {
+  const value = String(raw || '').trim();
+  return /^-?\d+(\.\d+)?$/.test(value) ? value : '0';
 }
 
 export function parseDTL(text) {
@@ -185,6 +237,14 @@ export function scenesFromDTL(text) {
     if (event.indent === 0) {
       if (event.type === 'text') {
         current.lines.push(event.speaker ? `${event.speaker}: ${event.body}` : event.body);
+      } else if (event.type === 'background') {
+        const attrs = [
+          event.scene ? `scene="${event.scene}"` : '',
+          event.arg ? `arg="${event.arg}"` : '',
+          event.fade && event.fade !== '0' ? `fade="${event.fade}"` : '',
+          event.transition ? `transition="${event.transition}"` : '',
+        ].filter(Boolean).join(' ');
+        current.lines.push(`[background${attrs ? ` ${attrs}` : ''}]`);
       } else if (event.type === 'set') {
         current.lines.push(`set {${event.varname}} ${event.op} ${event.value}`);
       } else if (event.type === 'choice') {
@@ -207,17 +267,33 @@ export function scenesFromDTL(text) {
 
 export function dtlFromScenes(initSets, scenes) {
   let output = '';
-  for (const setEvent of initSets) {
+  const fixedInitSets = CORE_VARIABLES.map((name) => ({ varname: name, op: '=', value: 0 }));
+  for (const setEvent of fixedInitSets) {
     output += `set {${setEvent.varname}} ${setEvent.op} ${setEvent.value}\n`;
   }
-  if (initSets.length) output += '\n';
+  output += '\n';
 
   for (const scene of scenes) {
     output += `label ${scene.name}\n`;
-    for (const line of scene.lines) output += `${line}\n`;
+    for (const line of scene.lines) {
+      const trimmedLine = String(line).trim();
+      if (/^\{[^}]+(?:=|\+=|-=|\*=|\/=)[^}]*\}$/.test(trimmedLine)) continue;
+      const bracketNameSet = trimmedLine.match(/^\[([^\]]+)\]\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
+      if (bracketNameSet) {
+        if (!isCoreVariable(bracketNameSet[1])) continue;
+        output += `set {${bracketNameSet[1]}} ${bracketNameSet[2]} ${numericSetValue(bracketNameSet[3])}\n`;
+        continue;
+      }
+      if (/^\[[^\]]+(?:=|\+=|-=|\*=|\/=)[^\]]*\]$/.test(trimmedLine) && !trimmedLine.startsWith('[set ')) continue;
+      const setMatch = trimmedLine.match(/^set\s+\{?([^}=+\-*\/\s]+)\}?\s*(=|\+=|-=|\*=|\/=)\s*(.+)$/);
+      if (setMatch && !isCoreVariable(setMatch[1])) continue;
+      output += `${line}\n`;
+    }
     for (const choice of scene.choices) {
-      output += `- ${choice.text}${choice.condition ? ` | [if ${choice.condition}]` : ''}\n`;
+      const condition = hasInvalidConditionVariable(choice.condition) ? '' : choice.condition;
+      output += `- ${choice.text}${condition ? ` | [if ${condition}]` : ''}\n`;
       for (const action of choice.actions || []) {
+        if (!isCoreVariable(action.varname)) continue;
         output += `\tset {${action.varname}} ${action.op} ${action.value}\n`;
       }
       if (choice.goto) output += `\tjump ${choice.goto}\n`;

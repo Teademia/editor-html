@@ -33,6 +33,8 @@
       <div v-else class="page">
         <div class="scene-id mono">label · {{ currentLabel }}</div>
 
+        <img v-if="currentBackground" class="scene-background" :src="currentBackground" alt="" />
+
         <template v-for="(line, index) in renderedLines" :key="index">
           <div v-if="line.kind === 'dlg'" class="line dlg">
             <span class="speaker">{{ line.speaker }}</span>
@@ -100,6 +102,7 @@ const renderedLines = ref([]);
 const choices = ref([]);
 const endText = ref('');
 const pendingJump = ref('');
+const currentBackground = ref('');
 const error = ref(null);
 const state = reactive({});
 
@@ -175,6 +178,8 @@ function collectScene(fromIdx) {
 
     if (event.type === 'text' && active) {
       lines.push(event.speaker ? { kind: 'dlg', speaker: event.speaker, text: event.body } : { kind: 'narr', text: event.body });
+    } else if (event.type === 'background' && active) {
+      currentBackground.value = event.arg;
     } else if (event.type === 'set' && active) {
       const before = { ...state };
       applySet(event, state);
@@ -237,6 +242,7 @@ function renderScene(label) {
 
 function restart() {
   clearState();
+  currentBackground.value = '';
   const parsed = parseDTL(dtlText.value);
   events.value = parsed.events;
   labelIndex.value = parsed.labelIndex;
@@ -397,6 +403,15 @@ if (saved) boot(saved);
 .scene-id {
   color: var(--ink-faint);
   font-size: 11px;
+}
+
+.scene-background {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(240, 226, 198, 0.03);
 }
 
 .line {

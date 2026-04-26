@@ -25,13 +25,18 @@ directories/dch_directory={}
 directories/dtl_directory={
 "test": "res://timelines/test.dtl",
 "光速迷途": "res://timelines/光速迷途.dtl",
-"四海纪": "res://timelines/四海纪.dtl"
+"潘多拉之潮": "res://timelines/潘多拉之潮.dtl"
 }
 layout/style_directory={}
 glossary/default_case_sensitive=true
 layout/style_list=[]
 layout/default_style="Default"
-variables={}
+variables={
+"政治": 0,
+"文化": 0,
+"科技": 0,
+"经济": 0
+}
 
 [dotnet]
 
