@@ -1,4 +1,4 @@
-﻿label start
+label start
 [background arg="res://assets/backgrounds/beishan_entrance_dawn.png" fade="0.3"]
 末世第十九个月，北山聚居地的旧广播塔重新亮起。
 
@@ -6,11 +6,11 @@
 
 他原本只是灾前的生态工程师，负责净水、土壤和微生物风险评估。可现在，粮仓、净水井、巡逻队、孩子们的课本和所有人的恐惧，都压到了他肩上。
 
-lin_yao (worried): 大家已经等了一夜。你得说点什么。
+林瑶: 大家已经等了一夜。你得说点什么。
 
 楚云天看向人群。有人饥饿，有人怀疑，有人只是太累了。
 
-chu_yuntian (normal): 从今天开始，北山不再靠运气活下去。每一份粮、每一滴水、每一条命，都要有去处。
+楚云天: 从今天开始，北山不再靠运气活下去。每一份粮、每一滴水、每一条命，都要有去处。
 
 第一道命令，会决定这个聚居地相信什么。
 
@@ -32,7 +32,7 @@ label water_well
 
 锈死的阀门被撬开，发黑的滤芯被拆下。孩子们站在水桶旁边，盯着第一股清水从管道里抖出来。
 
-lao_zhou (normal): 以前大家只知道你会看显微镜，没想到真能把水弄回来。
+老周: 以前大家只知道你会看显微镜，没想到真能把水弄回来。
 
 楚云天没有笑。他知道净水井只是第一步。没有食物，没有秩序，清水也守不住。
 
@@ -43,9 +43,9 @@ label open_granary
 
 每个人分到了一碗热粥。那不是充足的食物，却足以让大家相信新首领不是只会画图纸的人。
 
-lin_yao (normal): 他们会记住今天。
+林瑶: 他们会记住今天。
 
-chu_yuntian (worried): 也会记住明天少掉的库存。
+楚云天: 也会记住明天少掉的库存。
 
 他看着仓库墙上越来越低的红线，知道温情买来的时间非常短。
 
@@ -56,9 +56,9 @@ label patrol_order
 
 有人不满，有人松了一口气。前任首领留下的亲信被调离粮仓，守门的人换成了混编小队。
 
-han_ce (normal): 这样会得罪人。
+韩策: 这样会得罪人。
 
-chu_yuntian (normal): 已经没人有资格把基地当成自己的仓库了。
+楚云天: 已经没人有资格把基地当成自己的仓库了。
 
 秩序暂时稳住了，但操场上的目光变得更冷。
 
@@ -72,29 +72,11 @@ label first_council
 
 林瑶负责医疗，韩策负责巡逻，老周管仓库。三个人互相看着，等楚云天做决定。
 
-lin_yao (worried): 医疗棚缺酒精，也缺抗生素。
+林瑶: 医疗棚缺酒精，也缺抗生素。
 
-han_ce (worried): 西边山口有流民。人数不清，可能带着感染者。
+韩策: 西边山口有流民。人数不清，可能带着感染者。
 
-lao_zhou (worried): 如果不恢复交易，粮仓撑不过四十天。
-
-lin_yao (normal): 你现在需要的不是一句漂亮话，而是一张能执行的周计划。周一到周五，每天只能把人手押到一个方向上。
-
-lao_zhou (normal): 商队、工坊、课堂、巡逻，哪一边多一天，另一边就少一天。账就是这么冷。
-
-chu_yuntian (normal): 那就先排出第一周。让所有人知道，北山不是被恐惧推着走，而是按计划活下去。
-
-label first_schedule
-
-label after_first_schedule
-[background arg="res://assets/backgrounds/beishan_council_room.png" fade="0.3"]
-五天安排落到纸面上后，会议室安静了几秒。
-
-这不是胜利，却是北山第一次把混乱拆成了可以执行的日程。
-
-lin_yao (normal): 至少大家明天醒来时，会知道自己该去哪里。
-
-lao_zhou (worried): 也会知道仓库还剩多少东西能撑到下一个决定。
+老周: 如果不恢复交易，粮仓撑不过四十天。
 
 基地需要第二个方向。
 
@@ -116,9 +98,9 @@ label trade_station
 
 三天后，车队带回两袋盐、四箱压缩饼干和一个坏消息：旧货站背后已经有武装团伙盯上北山。
 
-lao_zhou (normal): 至少粮食能多撑十天。
+老周: 至少粮食能多撑十天。
 
-chu_yuntian (normal): 十天够我们准备下一件事。
+楚云天: 十天够我们准备下一件事。
 
 jump check_famine
 
@@ -129,9 +111,9 @@ label greenhouse
 
 第一排豆苗探出土时，没人说话。
 
-lin_yao (normal): 这比一袋粮食更有用。
+林瑶: 这比一袋粮食更有用。
 
-chu_yuntian (normal): 它告诉大家，北山还有明年。
+楚云天: 它告诉大家，北山还有明年。
 
 jump check_famine
 
@@ -144,7 +126,7 @@ label public_council
 
 楚云天让所有人把话说完，再把每条意见写在黑板上。
 
-chu_yuntian (normal): 从今天起，北山的命令要能被质疑，也要能被执行。
+楚云天: 从今天起，北山的命令要能被质疑，也要能被执行。
 
 jump check_famine
 
@@ -156,7 +138,7 @@ label famine_warning
 
 老周的声音发哑。
 
-lao_zhou (worried): 首领，经济储备太低了。我们已经开始闹饥荒。
+老周: 首领，经济储备太低了。我们已经开始闹饥荒。
 
 广播塔下，有人把空碗摔在地上。红色警报灯照着每个人的脸，像一层薄薄的血。
 
@@ -172,9 +154,9 @@ label after_famine_check
 
 二十七个人，三辆手推车，两个发烧的孩子。他们说自己的村子被红雾吞了，只想换一夜屋檐和一点热水。
 
-han_ce (worried): 首领，门一开，风险就进来了。
+韩策: 首领，门一开，风险就进来了。
 
-lin_yao (worried): 门不开，孩子今晚可能就死在外面。
+林瑶: 门不开，孩子今晚可能就死在外面。
 
 围墙上的人都在看楚云天。
 
@@ -199,9 +181,9 @@ label accept_refugees
 
 第二天，一个来自流民队伍的电工修好了二号发电机。
 
-lin_yao (normal): 善意有时候会带回东西。
+林瑶: 善意有时候会带回东西。
 
-chu_yuntian (normal): 也可能带回灾难。所以我们要把善意做成制度。
+楚云天: 也可能带回灾难。所以我们要把善意做成制度。
 
 jump check_revolt
 
@@ -212,9 +194,9 @@ label refuse_refugees
 
 当晚，基地里很安静。安静得像每个人都在假装自己没听见。
 
-han_ce (normal): 你保住了风险边界。
+韩策: 你保住了风险边界。
 
-chu_yuntian (worried): 也划掉了一部分人。
+楚云天: 也划掉了一部分人。
 
 jump check_revolt
 
@@ -225,9 +207,9 @@ label quarantine_refugees
 
 这个决定让两边都不满意，却也让最坏的风险被拦在了围墙外。
 
-lin_yao (normal): 你越来越像一个首领了。
+林瑶: 你越来越像一个首领了。
 
-chu_yuntian (normal): 我宁愿像一个合格的工程师。
+楚云天: 我宁愿像一个合格的工程师。
 
 jump check_revolt
 
@@ -240,7 +222,7 @@ label revolt_warning
 
 韩策把那块墙皮刮下来，脸色很难看。
 
-han_ce (worried): 政治秩序太低，几个棚区已经开始串联了。再压不住，就不是抱怨，是起义。
+韩策: 政治秩序太低，几个棚区已经开始串联了。再压不住，就不是抱怨，是起义。
 
 楚云天看着那行字留下的痕迹，没有立刻说话。
 
@@ -255,11 +237,11 @@ label after_revolt_check
 
 北山的围墙很旧，弹药不多，人心刚刚聚起来，还没变成真正的力量。
 
-han_ce (normal): 给我二十个人，我能守住正门。
+韩策: 给我二十个人，我能守住正门。
 
-lin_yao (worried): 如果开战，医疗棚装不下伤员。
+林瑶: 如果开战，医疗棚装不下伤员。
 
-lao_zhou (normal): 也许可以谈。他们也是人，也要吃饭。
+老周: 也许可以谈。他们也是人，也要吃饭。
 
 - 用仓库物资雇佣对方，换取一个月和平
 	set {经济} += 2
@@ -281,9 +263,9 @@ label buy_peace
 
 对方首领沉默很久，最后拿走了一批柴油和药，留下一个月期限。
 
-lao_zhou (normal): 买来的和平不便宜。
+老周: 买来的和平不便宜。
 
-chu_yuntian (normal): 但比葬礼便宜。
+楚云天: 但比葬礼便宜。
 
 jump monster_alarm
 
@@ -305,9 +287,9 @@ label tech_bluff
 
 那东西不会真的制造感染，却能让空气检测仪发出刺耳警报。山下的武装团伙看见红色烟雾从山口升起，立刻后撤。
 
-han_ce (normal): 你骗过了他们。
+韩策: 你骗过了他们。
 
-lin_yao (worried): 也骗过了我们自己。
+林瑶: 也骗过了我们自己。
 
 楚云天看着风里的红烟，第一次感到技术并不总是干净的。
 
@@ -319,13 +301,13 @@ label monster_alarm
 
 巡逻队的探照灯扫过树林，看见一头被红雾扭曲的巨兽正沿着排水沟冲向围墙。它的肩背像一辆翻倒的装甲车，皮肤上长满石灰色硬壳。
 
-lin_yao (worried): 医疗棚已经撤空。
+林瑶: 医疗棚已经撤空。
 
-han_ce (worried): 围墙撑不住第二次撞击。
+韩策: 围墙撑不住第二次撞击。
 
 楚云天冲上广播塔，抓起对讲机。
 
-chu_yuntian (worried): 所有人听令，按预案加固防线！现在！
+楚云天: 所有人听令，按预案加固防线！现在！
 
 label qte_monster
 
@@ -355,9 +337,9 @@ label final_plan
 
 如果拒绝，北山必须独自撑过冬天。
 
-lin_yao (normal): 这是最后一道题。
+林瑶: 这是最后一道题。
 
-han_ce (normal): 也是你作为首领的答案。
+韩策: 也是你作为首领的答案。
 
 - 建立贸易同盟，让北山成为区域市场中心
 	set {经济} += 4
@@ -384,15 +366,15 @@ label ending
 
 但它不再只是废土上的临时避难所。
 
-lin_yao (normal): 首领，大家在等你给新基地命名。
+林瑶: 首领，大家在等你给新基地命名。
 
 楚云天沉默了一会儿。
 
-chu_yuntian (normal): 就叫北山。我们不是从这里逃走的人，我们是从这里重新开始的人。
+楚云天: 就叫北山。我们不是从这里逃走的人，我们是从这里重新开始的人。
 
 风雪落下，广播塔的灯光穿过夜色。
 
-[end_timeline]
+end
 
 label ending_famine
 [background arg="res://assets/backgrounds/beishan_famine_warning.png" fade="0.2"]
@@ -404,7 +386,7 @@ label ending_famine
 
 楚云天最后一次打开库存表，发现上面已经没有任何可以分配的东西。
 
-[end_timeline]
+end
 
 label ending_revolt
 起义发生在凌晨。
@@ -415,7 +397,7 @@ label ending_revolt
 
 那不是拥戴，是审判。
 
-[end_timeline]
+end
 
 label ending_monster
 [background arg="res://assets/backgrounds/beishan_monster_attack.png" fade="0.2"]
@@ -427,4 +409,4 @@ label ending_monster
 
 这个聚居地没有败给某一个错误，而是败给此前所有准备的不足。
 
-[end_timeline]
+end

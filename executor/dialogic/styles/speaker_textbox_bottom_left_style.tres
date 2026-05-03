@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="DialogicStyle" load_steps=18 format=3]
+
+[ext_resource type="PackedScene" path="res://addons/dialogic/Modules/DefaultLayoutParts/Layer_FullBackground/full_background_layer.tscn" id="1"]
+[ext_resource type="Script" path="res://addons/dialogic/Resources/dialogic_style_layer.gd" id="2"]
+[ext_resource type="PackedScene" path="res://dialogic/styles/speaker_textbox_bottom_left.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://addons/dialogic/Modules/DefaultLayoutParts/Layer_Input/full_advance_input_layer.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://addons/dialogic/Modules/DefaultLayoutParts/Layer_Glossary/glossary_popup_layer.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://addons/dialogic/Modules/DefaultLayoutParts/Layer_VN_Choices/vn_choice_layer.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://addons/dialogic/Modules/DefaultLayoutParts/Layer_TextInput/text_input_layer.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://addons/dialogic/Modules/DefaultLayoutParts/Layer_History/history_layer.tscn" id="8"]
+[ext_resource type="Script" path="res://addons/dialogic/Resources/dialogic_style.gd" id="9"]
+
+[sub_resource type="Resource" id="10"]
+script = ExtResource("2")
+overrides = {}
+
+[sub_resource type="Resource" id="11"]
+script = ExtResource("2")
+scene = ExtResource("1")
+overrides = {}
+
+[sub_resource type="Resource" id="12"]
+script = ExtResource("2")
+scene = ExtResource("4")
+overrides = {}
+
+[sub_resource type="Resource" id="13"]
+script = ExtResource("2")
+scene = ExtResource("3")
+overrides = {}
+
+[sub_resource type="Resource" id="14"]
+script = ExtResource("2")
+scene = ExtResource("5")
+overrides = {}
+
+[sub_resource type="Resource" id="15"]
+script = ExtResource("2")
+scene = ExtResource("6")
+overrides = {}
+
+[sub_resource type="Resource" id="16"]
+script = ExtResource("2")
+scene = ExtResource("7")
+overrides = {}
+
+[sub_resource type="Resource" id="17"]
+script = ExtResource("2")
+scene = ExtResource("8")
+overrides = {}
+
+[resource]
+script = ExtResource("9")
+name = "Bottom Left Speaker Style"
+layer_list = Array[String](["10", "11", "12", "13", "14", "15", "16"])
+layer_info = {
+"": SubResource("10"),
+"10": SubResource("11"),
+"11": SubResource("12"),
+"12": SubResource("13"),
+"13": SubResource("14"),
+"14": SubResource("15"),
+"15": SubResource("16"),
+"16": SubResource("17")
+}
+base_overrides = {}
+layers = []
+metadata/_latest_layer = ""

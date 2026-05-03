@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Executor"
-run/main_scene="res://scenes/dtl_runner.tscn"
+run/main_scene="res://scenes/star_wars_intro.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -25,6 +25,7 @@ directories/dch_directory={}
 directories/dtl_directory={
 "test": "res://timelines/test.dtl",
 "光速迷途": "res://timelines/光速迷途.dtl",
+"楚云天聚居地演示": "res://timelines/楚云天聚居地演示.dtl",
 "潘多拉之潮": "res://timelines/潘多拉之潮.dtl"
 }
 layout/style_directory={}

@@ -270,9 +270,16 @@
         <section v-else class="pane graph-pane">
           <div class="graph-toolbar">
             <span class="mono">{{ selectedBlock?.title || '未选择块' }}</span>
+            <span v-if="sceneBatch.running || sceneBatch.status" class="mono generation-status">
+              {{ sceneBatch.current }}/{{ sceneBatch.total }} · {{ sceneBatch.status }}
+            </span>
             <span class="spacer"></span>
             <button class="btn" @click="importSkeletonAsNodes">由骨架生成节点</button>
+            <button class="btn primary" :disabled="sceneBatch.running" @click="generateAllGraphScenes">一键生成全部节点</button>
             <button class="btn" @click="addSceneNode">添加场景节点</button>
+          </div>
+          <div v-if="sceneBatch.running || sceneBatch.total || sceneBatch.error" class="generation-progress">
+            <div class="generation-progress-bar" :class="{ err: sceneBatch.error }" :style="{ width: `${sceneBatch.progress}%` }"></div>
           </div>
           <div class="graph-body">
             <div ref="graphEl" class="graph"></div>
@@ -305,6 +312,7 @@
                 spellcheck="false"
               ></textarea>
               <div class="scene-editor-footer">
+                <button class="btn primary" :disabled="sceneBatch.running" @click="generateSelectedScene">生成该节点</button>
                 <button class="btn primary" @click="commitSceneEdit">保存场景</button>
                 <button class="btn" @click="playFromHere">▶ 从此处播放</button>
                 <span class="hint">Ctrl+Enter 保存</span>
@@ -615,6 +623,7 @@ const sceneImageFade = ref(0.3);
 const generatedSceneImage = ref('');
 const generatedImageFilename = ref('');
 const imageGeneration = reactive({ running: false, progress: 0, status: '', error: '' });
+const sceneBatch = reactive({ running: false, total: 0, current: 0, progress: 0, status: '', error: '' });
 const godotProjectName = ref('');
 const generatedImageSaved = ref(false);
 const sceneContext = reactive({ purpose: '', emotion: '平静' });
@@ -810,7 +819,7 @@ function markBranching() {
 
 function addSceneNodeHtml(name, dtl) {
   const lines = dtl.split('\n').filter((line) => !line.startsWith('label') && line.trim());
-  const preview = lines[0]?.slice(0, 34) || '（空场景）';
+  const preview = lines.find((line) => !line.trim().startsWith('#'))?.slice(0, 34) || lines[0]?.slice(0, 34) || '（空场景）';
   return `
     <div class="df-card">
       <div class="df-badge">scene</div>
@@ -819,8 +828,22 @@ function addSceneNodeHtml(name, dtl) {
     </div>`;
 }
 
-function addGraphSceneNode(name, dtl, x, y) {
-  const nodeId = graphEditor.addNode(name, 1, 1, x, y, 'scene-node', { purpose: '', dtl }, addSceneNodeHtml(name, dtl));
+function scenePurposeFromDTL(dtl) {
+  const match = String(dtl || '').match(/^#\s*骨架[:：]\s*(.+)$/m);
+  return match ? match[1].trim() : '';
+}
+
+function addGraphSceneNode(name, dtl, x, y, purpose = '') {
+  const nodeId = graphEditor.addNode(
+    name,
+    1,
+    1,
+    x,
+    y,
+    'scene-node',
+    { purpose: purpose || scenePurposeFromDTL(dtl), dtl },
+    addSceneNodeHtml(name, dtl),
+  );
   graphNodeByScene[name] = nodeId;
   return nodeId;
 }
@@ -863,45 +886,84 @@ function loadBlockIntoGraph() {
 }
 
 function importSkeletonAsNodes() {
+  const result = ensureSkeletonGraphNodes({ showAlerts: true });
+  if (result.length) saveProject();
+}
+
+function ensureSkeletonGraphNodes({ showAlerts = false } = {}) {
   if (!selectedBlock.value?.skeleton) {
-    window.alert('请先生成骨架。');
-    return;
+    if (showAlerts) window.alert('请先生成骨架。');
+    return [];
   }
   if (!graphEditor) {
-    window.alert('节点图尚未初始化，请先切换到节点图标签页。');
-    return;
+    if (showAlerts) window.alert('节点图尚未初始化，请先切换到节点图标签页。');
+    return [];
   }
-  const lines = selectedBlock.value.skeleton.split('\n').filter((line) => /^#{0,6}\s*\d+\./.test(line.trim()));
-  if (!lines.length) {
-    window.alert('骨架中未找到编号列表，请确认骨架格式。');
-    return;
+  const items = skeletonItems(selectedBlock.value.skeleton);
+  if (!items.length) {
+    if (showAlerts) window.alert('骨架中未找到编号列表，请确认骨架格式。');
+    return [];
   }
-  const names = lines.map((line) => {
-    const slug = line
-      .replace(/^#+\s*/, '')
-      .replace(/^\d+\.\s*/, '')
-      .slice(0, 20)
-      .trim()
-      .replace(/[^a-zA-Z0-9一-龥]/g, '_')
-      .replace(/_+/g, '_');
-    return `${selectedBlock.value.id}_${slug}`;
-  });
+  const names = items.map((item, index) => `${selectedBlock.value.id}_${String(index + 1).padStart(2, '0')}_${slugifySceneName(item.title)}`);
   const allExist = names.every((name) => !!graphNodeByScene[name]);
   if (allExist) {
-    window.alert(`所有 ${names.length} 个骨架节点已存在于当前图中。如需重新生成，请先手动清空节点图。`);
-    return;
+    if (showAlerts) window.alert(`所有 ${names.length} 个骨架节点已存在于当前图中。`);
+    return names;
   }
   let x = 40;
   let y = 40;
-  for (const name of names) {
-    if (!project.scenes[name]) project.scenes[name] = `label ${name}\n`;
-    if (!graphNodeByScene[name]) addGraphSceneNode(name, project.scenes[name], x, y);
+  graphLoading = true;
+  for (const [index, name] of names.entries()) {
+    const nextName = names[index + 1] || '';
+    const placeholder = `label ${name}\n# 骨架：${items[index].text}\n${nextName ? `jump ${nextName}\n` : ''}`;
+    if (!project.scenes[name]) project.scenes[name] = placeholder;
+    else project.scenes[name] = ensureSceneJump(project.scenes[name], nextName);
+    if (!graphNodeByScene[name]) addGraphSceneNode(name, project.scenes[name], x, y, items[index].text);
     x += 240;
     if (x > 920) {
       x = 40;
       y += 180;
     }
   }
+  for (let index = 0; index < names.length - 1; index += 1) {
+    try {
+      graphEditor.addConnection(graphNodeByScene[names[index]], graphNodeByScene[names[index + 1]], 'output_1', 'input_1');
+    } catch {
+      // Ignore duplicate edges.
+    }
+  }
+  graphLoading = false;
+  return names;
+}
+
+function skeletonItems(text) {
+  return String(text || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => /^#{0,6}\s*\d+[.、]/.test(line))
+    .map((line) => {
+      const clean = line.replace(/^#+\s*/, '').replace(/^\d+[.、]\s*/, '').trim();
+      return { title: clean.slice(0, 20), text: clean };
+    })
+    .filter((item) => item.text);
+}
+
+function slugifySceneName(text) {
+  const slug = String(text || 'scene')
+    .slice(0, 18)
+    .trim()
+    .replace(/[^a-zA-Z0-9一-龥]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return slug || 'scene';
+}
+
+function ensureSceneJump(dtl, nextName) {
+  if (!nextName) return String(dtl || '').replace(/^jump \S+\s*$/gm, '').trimEnd() + '\n';
+  const raw = String(dtl || '').trimEnd();
+  if (raw.includes(`jump ${nextName}`)) return `${raw}\n`;
+  const withoutTerminalJump = raw.replace(/^jump \S+\s*$/gm, '').trimEnd();
+  return `${withoutTerminalJump}\njump ${nextName}\n`;
 }
 function addSceneNode() {
   if (!selectedBlock.value || !graphEditor) return;
@@ -1239,7 +1301,9 @@ async function runGenerateSkeleton() {
         aiOutputs.skeleton += delta;
       },
     });
+    selectedBlock.value.skeleton = aiOutputs.skeleton.trim();
     selectedBlock.value.status = 'skeleton';
+    if (currentTab.value === 'graph') importSkeletonAsNodes();
   } catch (error) {
     if (error.name !== 'AbortError') aiOutputs.skeleton = `错误：${error.message}`;
   }
@@ -1267,24 +1331,40 @@ async function runGenerateScene() {
   if (!selectedSceneName.value || !selectedBlock.value || !ensureAiReady()) return;
   aiOutputs.scene = '';
   try {
-    await AIClient.generateScene(
-      {
-        purpose: sceneContext.purpose,
-        emotion: sceneContext.emotion,
-        characters: [project.story_bible.protagonist?.name || '主角'],
-        skeletonPoint: selectedSceneName.value,
+    aiOutputs.scene = await generateSceneTextForName(selectedSceneName.value, {
+      signal: abortPrevious(),
+      onChunk: (delta) => {
+        aiOutputs.scene += delta;
       },
-      project.story_bible,
-      {
-        signal: abortPrevious(),
-        onChunk: (delta) => {
-          aiOutputs.scene += delta;
-        },
-      },
-    );
+    });
   } catch (error) {
     if (error.name !== 'AbortError') aiOutputs.scene = `错误：${error.message}`;
   }
+}
+
+async function generateSceneTextForName(name, options = {}) {
+  const node = graphEditor && graphNodeByScene[name] ? graphEditor.getNodeFromId(graphNodeByScene[name]) : null;
+  const existing = project.scenes[name] || '';
+  const purpose = node?.data?.purpose || scenePurposeFromDTL(existing) || name;
+  let full = '';
+  await AIClient.generateScene(
+    {
+      purpose,
+      emotion: sceneContext.emotion,
+      characters: [project.story_bible.protagonist?.name || '主角'],
+      skeletonPoint: purpose,
+      prevEnding: previousSceneEnding(name),
+    },
+    project.story_bible,
+    {
+      signal: options.signal,
+      onChunk: (delta) => {
+        full += delta;
+        options.onChunk?.(delta, full);
+      },
+    },
+  );
+  return full;
 }
 
 function stripDtlFence(raw) {
@@ -1297,11 +1377,184 @@ function stripDtlFence(raw) {
 
 function insertSceneIntoNode() {
   if (!selectedSceneName.value || !aiOutputs.scene) return;
-  const content = stripDtlFence(aiOutputs.scene);
+  const content = sceneContentWithExistingJump(selectedSceneName.value, stripDtlFence(aiOutputs.scene));
   project.scenes[selectedSceneName.value] = `label ${selectedSceneName.value}\n${content}\n`;
   sceneEditorContent.value = content;
   refreshGraphNode(selectedSceneName.value);
   saveProject();
+}
+
+async function generateSelectedScene() {
+  if (!selectedSceneName.value || !selectedBlock.value || !ensureAiReady()) return;
+  sceneBatch.running = true;
+  sceneBatch.total = 1;
+  sceneBatch.current = 0;
+  sceneBatch.progress = 5;
+  sceneBatch.error = '';
+  sceneBatch.status = `生成 ${selectedSceneName.value}`;
+  aiOutputs.scene = '';
+  try {
+    const raw = await generateSceneTextForName(selectedSceneName.value, {
+      signal: abortPrevious(),
+      onChunk: (delta) => {
+        aiOutputs.scene += delta;
+      },
+    });
+    writeGeneratedScene(selectedSceneName.value, raw);
+    sceneBatch.current = 1;
+    sceneBatch.progress = 100;
+    sceneBatch.status = '完成';
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      sceneBatch.error = error.message;
+      sceneBatch.status = `失败：${error.message}`;
+    }
+  } finally {
+    sceneBatch.running = false;
+  }
+}
+
+async function generateAllGraphScenes() {
+  if (!selectedBlock.value) return;
+  sceneBatch.running = true;
+  sceneBatch.total = 0;
+  sceneBatch.current = 0;
+  sceneBatch.progress = 2;
+  sceneBatch.error = '';
+  sceneBatch.status = '检查 AI 配置';
+
+  if (!ensureAiReady()) {
+    sceneBatch.running = false;
+    sceneBatch.error = '未配置 AI';
+    sceneBatch.status = '请先配置 API Key';
+    return;
+  }
+
+  if (!graphEditor) {
+    await nextTick();
+    if (graphEl.value) initGraph();
+  }
+  if (!graphEditor) {
+    sceneBatch.running = false;
+    sceneBatch.error = '节点图未初始化';
+    sceneBatch.status = '请先进入节点图';
+    return;
+  }
+
+  if (!selectedBlock.value.skeleton?.trim()) {
+    sceneBatch.status = '正在生成骨架';
+    sceneBatch.progress = 8;
+    aiOutputs.skeleton = '';
+    try {
+      await AIClient.generateSkeleton(selectedBlock.value, project.story_bible, {
+        signal: abortPrevious(),
+        onChunk: (delta) => {
+          aiOutputs.skeleton += delta;
+        },
+      });
+      selectedBlock.value.skeleton = aiOutputs.skeleton.trim();
+      selectedBlock.value.status = 'skeleton';
+      saveProject();
+    } catch (error) {
+      sceneBatch.running = false;
+      if (error.name !== 'AbortError') {
+        sceneBatch.error = error.message;
+        sceneBatch.status = `骨架生成失败：${error.message}`;
+      }
+      return;
+    }
+  } else if (aiOutputs.skeleton && !selectedBlock.value.skeleton.trim()) {
+    selectedBlock.value.skeleton = aiOutputs.skeleton.trim();
+  }
+
+  sceneBatch.status = '正在生成节点并连线';
+  sceneBatch.progress = 15;
+  ensureSkeletonGraphNodes();
+
+  let names = currentGraphSceneNames();
+  if (!names.length && selectedBlock.value.skeleton) {
+    ensureSkeletonGraphNodes();
+    names = currentGraphSceneNames();
+  }
+  if (!names.length) {
+    sceneBatch.running = false;
+    sceneBatch.error = '没有可生成节点';
+    sceneBatch.status = '骨架中没有识别到编号节点';
+    return;
+  }
+
+  sceneBatch.total = names.length;
+  sceneBatch.current = 0;
+  sceneBatch.progress = 18;
+  sceneBatch.error = '';
+  sceneBatch.status = '准备生成';
+  const signal = abortPrevious();
+  try {
+    for (const [index, name] of names.entries()) {
+      sceneBatch.current = index + 1;
+      sceneBatch.progress = 18 + Math.round((index / names.length) * 80);
+      sceneBatch.status = `正在生成 ${name}`;
+      aiOutputs.scene = '';
+      const raw = await generateSceneTextForName(name, {
+        signal,
+        onChunk: (delta) => {
+          aiOutputs.scene += delta;
+        },
+      });
+      writeGeneratedScene(name, raw);
+      sceneBatch.progress = 18 + Math.round(((index + 1) / names.length) * 80);
+    }
+    sceneBatch.status = '全部生成完成';
+    sceneBatch.progress = 100;
+    selectedBlock.value.status = 'complete';
+    saveProject();
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      sceneBatch.error = error.message;
+      sceneBatch.status = `失败：${error.message}`;
+    }
+  } finally {
+    sceneBatch.running = false;
+  }
+}
+
+function writeGeneratedScene(name, raw) {
+  const content = sceneContentWithExistingJump(name, stripDtlFence(raw));
+  project.scenes[name] = `label ${name}\n${content}\n`;
+  if (selectedSceneName.value === name) sceneEditorContent.value = content;
+  refreshGraphNode(name);
+  saveProject();
+}
+
+function sceneContentWithExistingJump(name, content) {
+  const existing = project.scenes[name] || '';
+  const jumpLines = [...existing.matchAll(/^jump \S+\s*$/gm)].map((match) => match[0]);
+  const stripped = String(content || '').replace(/^jump \S+\s*$/gm, '').trim();
+  return [stripped, ...jumpLines].filter(Boolean).join('\n');
+}
+
+function currentGraphSceneNames() {
+  if (!selectedBlock.value) return [];
+  const prefix = `${selectedBlock.value.id}_`;
+  return Object.keys(graphNodeByScene)
+    .filter((name) => name.startsWith(prefix))
+    .sort((a, b) => {
+      const aNode = graphEditor.getNodeFromId(graphNodeByScene[a]);
+      const bNode = graphEditor.getNodeFromId(graphNodeByScene[b]);
+      return (aNode?.pos_y ?? 0) - (bNode?.pos_y ?? 0) || (aNode?.pos_x ?? 0) - (bNode?.pos_x ?? 0);
+    });
+}
+
+function previousSceneEnding(name) {
+  const names = currentGraphSceneNames();
+  const index = names.indexOf(name);
+  if (index <= 0) return '';
+  const previous = project.scenes[names[index - 1]] || '';
+  return previous
+    .split('\n')
+    .filter((line) => line.trim() && !line.startsWith('label') && !line.startsWith('#') && !line.startsWith('jump'))
+    .slice(-3)
+    .join('\n');
 }
 
 async function runGenerateImagePrompt() {
@@ -1688,6 +1941,28 @@ onBeforeUnmount(() => {
   gap: 10px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--line);
+}
+
+.generation-status {
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+.generation-progress {
+  height: 6px;
+  background: rgba(240, 226, 198, 0.08);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.generation-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.generation-progress-bar.err {
+  background: var(--err);
 }
 
 .graph-body {

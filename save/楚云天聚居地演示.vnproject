@@ -1,0 +1,367 @@
+{
+  "__version": 1,
+  "project": {
+    "title": "楚云天聚居地演示",
+    "story_bible": {
+      "opening": "末世第十九个月，楚云天在前任首领死亡后接管北山聚居地。玩家开局分配经济、科技、文化、政治共20点，随后通过治理选择、低属性危机和兽潮QTE走向不同基地结局。经济过低会触发饥荒，政治过低会触发起义，经济与科技不足且QTE失败会导致兽潮毁灭。",
+      "target_words": 8000,
+      "world": {
+        "setting": "近未来末世废土。红雾感染和资源断供摧毁旧城市，幸存者以小型聚居地形式生存。北山聚居地位于一所废弃山地学校改造的基地中，有围墙、粮仓、净水井、温室和旧广播塔。",
+        "rules": "1. 四属性代表基地发展路线：经济代表贸易与资源，科技代表工程与净水种植，文化代表凝聚力与公共信任，政治代表秩序与组织能力。2. 每次选择会改变属性。3. 终局根据最高属性展示不同基地方向。4. 剧情以毕业设计演示为目标，流程短、分支清晰、便于展示。",
+        "tone": "克制、现实、带有末世治理感。重点不是打怪，而是资源分配、秩序重建与公共选择。"
+      },
+      "protagonist": {
+        "name": "楚云天",
+        "personality": [
+          "理性",
+          "克制",
+          "责任感强",
+          "擅长工程判断"
+        ],
+        "motivation": "让北山聚居地从临时避难所变成真正可以延续的基地。",
+        "flaw": "习惯把社会问题当成工程问题，容易低估人的恐惧、怨恨和希望。"
+      },
+      "variables": [
+        {
+          "name": "经济",
+          "initial": 0,
+          "min": 0,
+          "max": 10
+        },
+        {
+          "name": "科技",
+          "initial": 0,
+          "min": 0,
+          "max": 10
+        },
+        {
+          "name": "文化",
+          "initial": 0,
+          "min": 0,
+          "max": 10
+        },
+        {
+          "name": "政治",
+          "initial": 0,
+          "min": 0,
+          "max": 10
+        }
+      ],
+      "endings": [
+        {
+          "title": "商业联盟结局",
+          "condition": "经济最高",
+          "description": "北山通过贸易、物资调度和区域市场成为附近聚居地的资源中心。"
+        },
+        {
+          "title": "科技复兴结局",
+          "condition": "科技最高",
+          "description": "北山依靠净水、温室和工程技术建立共同防线，成为灾后技术节点。"
+        },
+        {
+          "title": "文明传承结局",
+          "condition": "文化最高",
+          "description": "北山以公约、教育和公共信任吸纳周边幸存者，成为新的共同体。"
+        },
+        {
+          "title": "秩序重建结局",
+          "condition": "政治最高",
+          "description": "北山通过组织、巡逻和指挥体系维持安全，成为区域秩序核心。"
+        }
+      ]
+    },
+    "structure": {
+      "template": "demo_short",
+      "branching_beat_id": "final",
+      "beats": [
+        {
+          "id": "opening",
+          "name": "继任首领",
+          "pct": 10,
+          "desc": "楚云天接管北山聚居地",
+          "block_id": "block_1"
+        },
+        {
+          "id": "governance",
+          "name": "第一次治理",
+          "pct": 30,
+          "desc": "修水井、开粮仓或整编巡逻队",
+          "block_id": "block_2"
+        },
+        {
+          "id": "crisis",
+          "name": "外部危机",
+          "pct": 60,
+          "desc": "流民与武装团伙考验基地路线",
+          "block_id": "block_3"
+        },
+        {
+          "id": "final",
+          "name": "基地结局",
+          "pct": 95,
+          "desc": "根据最终方向进入基地结局",
+          "block_id": "block_4"
+        }
+      ]
+    },
+    "blocks": [
+      {
+        "id": "block_1",
+        "beat_id": "opening",
+        "title": "广播塔下的新首领",
+        "status": "complete",
+        "word_target": 1500,
+        "design": {
+          "purpose": "开局展示楚云天成为北山聚居地首领，并让玩家做出第一项治理选择。",
+          "emotion_curve": [
+            [
+              "压抑",
+              0.2
+            ],
+            [
+              "承担",
+              0.6
+            ],
+            [
+              "决策",
+              1
+            ]
+          ],
+          "input_state": {
+            "location": "北山聚居地操场",
+            "variables": {
+              "经济": 0,
+              "科技": 0,
+              "文化": 0,
+              "政治": 0
+            }
+          },
+          "choice_points": [
+            {
+              "source": "author",
+              "status": "approved",
+              "position_hint": "第一道命令",
+              "reason": "展示四属性系统的基本取向",
+              "options": [
+                {
+                  "text": "优先修复净水井",
+                  "effect": "科技 += 2, 经济 -= 1"
+                },
+                {
+                  "text": "打开粮仓",
+                  "effect": "文化 += 2, 经济 -= 1"
+                },
+                {
+                  "text": "整编巡逻队",
+                  "effect": "政治 += 2, 文化 -= 1"
+                }
+              ]
+            }
+          ],
+          "outcomes": [
+            "楚云天接任首领",
+            "基地发展路线出现初始分化"
+          ]
+        },
+        "skeleton": "1. 前任首领死亡。2. 楚云天站到广播塔下。3. 幸存者等待第一道命令。4. 玩家选择净水、粮仓或秩序。"
+      },
+      {
+        "id": "block_2",
+        "beat_id": "governance",
+        "title": "第一次小议会",
+        "status": "complete",
+        "word_target": 2000,
+        "design": {
+          "purpose": "通过议会选择展示资源、技术与公共参与之间的不同治理策略。",
+          "emotion_curve": [
+            [
+              "紧张",
+              0.3
+            ],
+            [
+              "争执",
+              0.6
+            ],
+            [
+              "推进",
+              1
+            ]
+          ],
+          "input_state": {
+            "location": "食堂小议会",
+            "variables": {}
+          },
+          "choice_points": [
+            {
+              "source": "author",
+              "status": "approved",
+              "position_hint": "第二个方向",
+              "reason": "强化经济、科技、文化、政治属性的积累",
+              "options": [
+                {
+                  "text": "派商队换粮",
+                  "effect": "经济 += 3, 政治 -= 1"
+                },
+                {
+                  "text": "改造温室",
+                  "effect": "科技 += 2, 经济 += 1"
+                },
+                {
+                  "text": "建立公开议事会",
+                  "effect": "文化 += 2, 政治 += 1"
+                }
+              ]
+            }
+          ],
+          "outcomes": [
+            "基地获得中期发展方向"
+          ]
+        },
+        "skeleton": "1. 小议会分析粮食、发电机、围墙。2. 玩家决定交易、种植或公开治理。"
+      },
+      {
+        "id": "block_3",
+        "beat_id": "crisis",
+        "title": "流民与山下威胁",
+        "status": "complete",
+        "word_target": 2500,
+        "design": {
+          "purpose": "用流民和武装团伙危机展示首领决策的道德与治理压力。",
+          "emotion_curve": [
+            [
+              "同情",
+              0.2
+            ],
+            [
+              "危险",
+              0.55
+            ],
+            [
+              "成人礼",
+              1
+            ]
+          ],
+          "input_state": {
+            "location": "北山围墙",
+            "variables": {}
+          },
+          "choice_points": [
+            {
+              "source": "author",
+              "status": "approved",
+              "position_hint": "流民抵达",
+              "reason": "测试玩家对信任与风险的态度",
+              "options": [
+                {
+                  "text": "接纳流民",
+                  "effect": "文化 += 2, 经济 -= 1"
+                },
+                {
+                  "text": "只给物资让他们离开",
+                  "effect": "政治 += 1, 经济 += 1, 文化 -= 1"
+                },
+                {
+                  "text": "隔离检查后接纳",
+                  "effect": "科技 += 1, 政治 += 1"
+                }
+              ]
+            },
+            {
+              "source": "author",
+              "status": "approved",
+              "position_hint": "武装团伙威胁",
+              "reason": "测试基地面对外部冲突的方式",
+              "options": [
+                {
+                  "text": "用物资换和平",
+                  "effect": "经济 += 2, 文化 -= 1"
+                },
+                {
+                  "text": "组织民兵防守",
+                  "effect": "政治 += 3, 经济 -= 1"
+                },
+                {
+                  "text": "用技术制造假污染区",
+                  "effect": "科技 += 3, 文化 -= 1"
+                }
+              ]
+            }
+          ],
+          "outcomes": [
+            "北山通过第一次外部危机",
+            "属性路线基本成型"
+          ]
+        },
+        "skeleton": "1. 流民抵达北山。2. 玩家决定接纳策略。3. 武装团伙威胁基地。4. 玩家决定和平、武力或技术欺骗。"
+      },
+      {
+        "id": "block_4",
+        "beat_id": "final",
+        "title": "北山的结局",
+        "status": "complete",
+        "word_target": 2000,
+        "design": {
+          "purpose": "终局选择基地发展方向，并在 Godot 结局系统中根据最高属性展示结局。",
+          "emotion_curve": [
+            [
+              "安静",
+              0.2
+            ],
+            [
+              "选择",
+              0.6
+            ],
+            [
+              "余波",
+              1
+            ]
+          ],
+          "input_state": {
+            "location": "广播塔",
+            "variables": {}
+          },
+          "choice_points": [
+            {
+              "source": "author",
+              "status": "approved",
+              "position_hint": "是否与南方基地合并",
+              "reason": "最终把属性推向某一结局",
+              "options": [
+                {
+                  "text": "贸易同盟",
+                  "effect": "经济 += 4"
+                },
+                {
+                  "text": "技术共同防线",
+                  "effect": "科技 += 4"
+                },
+                {
+                  "text": "北山公约",
+                  "effect": "文化 += 4"
+                },
+                {
+                  "text": "保留武装指挥权",
+                  "effect": "政治 += 4"
+                }
+              ]
+            }
+          ],
+          "outcomes": [
+            "进入经济、科技、文化或政治结局"
+          ]
+        },
+        "skeleton": "1. 南方基地发来合并电报。2. 楚云天选择北山最终路线。3. 冬雪落下，基地进入结局。"
+      }
+    ],
+    "scenes": {
+      "完整演示流程": "label start\n[background arg=\"res://assets/backgrounds/beishan_entrance_dawn.png\" fade=\"0.3\"]\n末世第十九个月，北山聚居地的旧广播塔重新亮起。\n\n昨夜，前任首领死于红雾感染。清晨，三百七十六名幸存者站在操场上，看着楚云天从医疗棚里走出来。\n\n他原本只是灾前的生态工程师，负责净水、土壤和微生物风险评估。可现在，粮仓、净水井、巡逻队、孩子们的课本和所有人的恐惧，都压到了他肩上。\n\n林瑶: 大家已经等了一夜。你得说点什么。\n\n楚云天看向人群。有人饥饿，有人怀疑，有人只是太累了。\n\n楚云天: 从今天开始，北山不再靠运气活下去。每一份粮、每一滴水、每一条命，都要有去处。\n\n第一道命令，会决定这个聚居地相信什么。\n\n- 优先修复净水井\n\tset {科技} += 2\n\tset {经济} -= 1\n\tjump water_well\n- 打开粮仓，先让所有人吃一顿饱饭\n\tset {文化} += 2\n\tset {经济} -= 2\n\tjump open_granary\n- 整编巡逻队，先稳住秩序\n\tset {政治} += 2\n\tset {文化} -= 1\n\tjump patrol_order\n\nlabel water_well\n楚云天把第一批人派去了地下泵房。\n\n锈死的阀门被撬开，发黑的滤芯被拆下。孩子们站在水桶旁边，盯着第一股清水从管道里抖出来。\n\n老周: 以前大家只知道你会看显微镜，没想到真能把水弄回来。\n\n楚云天没有笑。他知道净水井只是第一步。没有食物，没有秩序，清水也守不住。\n\njump first_council\n\nlabel open_granary\n粮仓门打开时，人群先是沉默，然后爆发出压抑的哭声。\n\n每个人分到了一碗热粥。那不是充足的食物，却足以让大家相信新首领不是只会画图纸的人。\n\n林瑶: 他们会记住今天。\n\n楚云天: 也会记住明天少掉的库存。\n\n他看着仓库墙上越来越低的红线，知道温情买来的时间非常短。\n\njump first_council\n\nlabel patrol_order\n楚云天把旧巡逻队拆成三组，重新登记枪械、弹药和夜间路线。\n\n有人不满，有人松了一口气。前任首领留下的亲信被调离粮仓，守门的人换成了混编小队。\n\n韩策: 这样会得罪人。\n\n楚云天: 已经没人有资格把基地当成自己的仓库了。\n\n秩序暂时稳住了，但操场上的目光变得更冷。\n\njump first_council\n\nlabel first_council\n[background arg=\"res://assets/backgrounds/beishan_council_room.png\" fade=\"0.3\"]\n当天夜里，楚云天召集第一次小议会。\n\n桌上摊着三张纸：粮食库存、发电机损耗、外墙裂缝。每一张纸都像一份坏消息。\n\n林瑶负责医疗，韩策负责巡逻，老周管仓库。三个人互相看着，等楚云天做决定。\n\n林瑶: 医疗棚缺酒精，也缺抗生素。\n\n韩策: 西边山口有流民。人数不清，可能带着感染者。\n\n老周: 如果不恢复交易，粮仓撑不过四十天。\n\n基地需要第二个方向。\n\n- 派商队去旧货站换粮\n\tset {经济} += 3\n\tset {政治} -= 1\n\tjump trade_station\n- 改造温室，尝试恢复种植\n\tset {科技} += 2\n\tset {经济} += 1\n\tjump greenhouse\n- 建立公开议事会，让各棚区推代表\n\tset {文化} += 2\n\tset {政治} += 1\n\tjump public_council\n\nlabel trade_station\n商队出发时，楚云天把仅剩的柴油分了一半给他们。\n\n三天后，车队带回两袋盐、四箱压缩饼干和一个坏消息：旧货站背后已经有武装团伙盯上北山。\n\n老周: 至少粮食能多撑十天。\n\n楚云天: 十天够我们准备下一件事。\n\njump check_famine\n\nlabel greenhouse\n温室原本是废弃的校内实验棚，玻璃碎了一半，土壤酸化，灌溉管线堵死。\n\n楚云天带着十几个年轻人干了两天，重新配土、接管、做简易防雾膜。\n\n第一排豆苗探出土时，没人说话。\n\n林瑶: 这比一袋粮食更有用。\n\n楚云天: 它告诉大家，北山还有明年。\n\njump check_famine\n\nlabel public_council\n公开议事会开在食堂。\n\n有人抱怨粥太稀，有人质问巡逻队凭什么搜包，也有人第一次主动提出自己会修发电机。\n\n韩策皱着眉站在门口，手始终按在枪套上。\n\n楚云天让所有人把话说完，再把每条意见写在黑板上。\n\n楚云天: 从今天起，北山的命令要能被质疑，也要能被执行。\n\njump check_famine\n\nlabel check_famine\n\nlabel famine_warning\n[background arg=\"res://assets/backgrounds/beishan_famine_warning.png\" fade=\"0.2\"]\n第八天，粮仓门口排起了长队。\n\n老周的声音发哑。\n\n老周: 首领，经济储备太低了。我们已经开始闹饥荒。\n\n广播塔下，有人把空碗摔在地上。红色警报灯照着每个人的脸，像一层薄薄的血。\n\n楚云天知道，如果不能尽快补上物资，北山会先从内部塌掉。\n\nset {文化} -= 1\nset {政治} -= 1\n\njump after_famine_check\n\nlabel after_famine_check\n第五天傍晚，西边山口出现了一支流民队伍。\n\n二十七个人，三辆手推车，两个发烧的孩子。他们说自己的村子被红雾吞了，只想换一夜屋檐和一点热水。\n\n韩策: 首领，门一开，风险就进来了。\n\n林瑶: 门不开，孩子今晚可能就死在外面。\n\n围墙上的人都在看楚云天。\n\n- 接纳流民，隔离检查后分配住处\n\tset {文化} += 2\n\tset {经济} -= 1\n\tjump accept_refugees\n- 只提供水和药，让他们离开\n\tset {政治} += 1\n\tset {经济} += 1\n\tset {文化} -= 1\n\tjump refuse_refugees\n- 让健康者留下，感染风险者送到外棚观察\n\tset {科技} += 1\n\tset {政治} += 1\n\tjump quarantine_refugees\n\nlabel accept_refugees\n北山打开了侧门。\n\n流民进入隔离棚，医疗队忙到后半夜。有人主动把自己的被褥分出去，也有人低声骂楚云天太心软。\n\n第二天，一个来自流民队伍的电工修好了二号发电机。\n\n林瑶: 善意有时候会带回东西。\n\n楚云天: 也可能带回灾难。所以我们要把善意做成制度。\n\njump check_revolt\n\nlabel refuse_refugees\n楚云天命人把水、药和半袋粮放到门外。\n\n流民队伍没有闹，只是沉默地推着车离开。两个孩子的咳嗽声在山路上越来越远。\n\n当晚，基地里很安静。安静得像每个人都在假装自己没听见。\n\n韩策: 你保住了风险边界。\n\n楚云天: 也划掉了一部分人。\n\njump check_revolt\n\nlabel quarantine_refugees\n楚云天没有立刻开门。\n\n他让医疗队在外墙搭起临时隔离棚，先测体温、查皮肤、观察瞳孔反应。健康者进入北山，疑似感染者留在外棚。\n\n这个决定让两边都不满意，却也让最坏的风险被拦在了围墙外。\n\n林瑶: 你越来越像一个首领了。\n\n楚云天: 我宁愿像一个合格的工程师。\n\njump check_revolt\n\nlabel check_revolt\n\nlabel revolt_warning\n第十二天，巡逻队在食堂后墙发现了黑字。\n\n「楚云天滚下去。」\n\n韩策把那块墙皮刮下来，脸色很难看。\n\n韩策: 政治秩序太低，几个棚区已经开始串联了。再压不住，就不是抱怨，是起义。\n\n楚云天看着那行字留下的痕迹，没有立刻说话。\n\nset {政治} -= 1\n\njump after_revolt_check\n\nlabel after_revolt_check\n第十天，旧货站的警告变成了现实。\n\n山下出现了三辆改装车。车身挂着铁皮和兽骨，喇叭里传来粗哑的喊话：交出粮食、柴油和医生，否则天黑后他们自己来拿。\n\n北山的围墙很旧，弹药不多，人心刚刚聚起来，还没变成真正的力量。\n\n韩策: 给我二十个人，我能守住正门。\n\n林瑶: 如果开战，医疗棚装不下伤员。\n\n老周: 也许可以谈。他们也是人，也要吃饭。\n\n- 用仓库物资雇佣对方，换取一个月和平\n\tset {经济} += 2\n\tset {文化} -= 1\n\tjump buy_peace\n- 组织民兵和陷阱，正面守住北山\n\tset {政治} += 3\n\tset {经济} -= 1\n\tjump defend_base\n- 用旧实验室的红雾诱导剂制造假污染区，逼他们撤退\n\tset {科技} += 3\n\tset {文化} -= 1\n\tjump tech_bluff\n\nlabel buy_peace\n楚云天带着老周下山谈判。\n\n他没有装强硬，只把账算给对方听：抢一次北山，只能吃二十天；和北山交易，可以活过整个冬天。\n\n对方首领沉默很久，最后拿走了一批柴油和药，留下一个月期限。\n\n老周: 买来的和平不便宜。\n\n楚云天: 但比葬礼便宜。\n\njump monster_alarm\n\nlabel defend_base\n北山整夜没有熄灯。\n\n孩子们被送进地下室，老人负责搬石头，年轻人挖沟、拉线、埋铁钉。韩策带着巡逻队守在正门。\n\n天亮前，改装车冲上山路，被第一道塌方沟拦住。\n\n枪声持续了十一分钟。\n\n北山守住了。代价是七个伤员，和所有人第一次真正意识到自己属于同一个地方。\n\njump monster_alarm\n\nlabel tech_bluff\n楚云天打开旧实验室的冷柜，取出灾前留下的红雾诱导剂。\n\n那东西不会真的制造感染，却能让空气检测仪发出刺耳警报。山下的武装团伙看见红色烟雾从山口升起，立刻后撤。\n\n韩策: 你骗过了他们。\n\n林瑶: 也骗过了我们自己。\n\n楚云天看着风里的红烟，第一次感到技术并不总是干净的。\n\njump monster_alarm\n\nlabel monster_alarm\n[background arg=\"res://assets/backgrounds/beishan_monster_attack.png\" fade=\"0.3\"]\n第十七天深夜，山林里传来低沉的撞击声。\n\n巡逻队的探照灯扫过树林，看见一头被红雾扭曲的巨兽正沿着排水沟冲向围墙。它的肩背像一辆翻倒的装甲车，皮肤上长满石灰色硬壳。\n\n林瑶: 医疗棚已经撤空。\n\n韩策: 围墙撑不住第二次撞击。\n\n楚云天冲上广播塔，抓起对讲机。\n\n楚云天: 所有人听令，按预案加固防线！现在！\n\nlabel qte_monster\n\nlabel monster_defended\n最后一根钢索绷紧时，巨兽撞上了外墙。\n\n墙体发出令人牙酸的呻吟，却没有倒下。高压电弧沿着湿铁丝爆开，红雾怪物被逼退，倒进山沟里。\n\n北山沉默了几秒，然后爆发出欢呼。\n\nset {文化} += 1\nset {政治} += 1\n\njump final_plan\n\nlabel final_plan\n[background arg=\"res://assets/backgrounds/beishan_snow_ending.png\" fade=\"0.3\"]\n危机之后，北山迎来了短暂的安静。\n\n净水井还在工作，温室有了新芽，围墙上挂着修补后的铁板。广播塔每天傍晚播放十分钟的名单：出生、死亡、外出、归来。\n\n楚云天站在塔下，收到一条来自南方基地的电报。\n\n南方愿意和北山合并，但条件苛刻：他们要北山的净水技术、粮仓管理权和一半巡逻队编制。\n\n如果接受，北山会得到工业设备和长期安全。\n\n如果拒绝，北山必须独自撑过冬天。\n\n林瑶: 这是最后一道题。\n\n韩策: 也是你作为首领的答案。\n\n- 建立贸易同盟，让北山成为区域市场中心\n\tset {经济} += 4\n\tjump ending\n- 发布净水和种植技术，换取共同防线\n\tset {科技} += 4\n\tjump ending\n- 拒绝吞并，建立北山公约，吸纳周边小聚居地\n\tset {文化} += 4\n\tjump ending\n- 接受合并，但保留北山武装和指挥权\n\tset {政治} += 4\n\tjump ending\n\nlabel ending\n[background arg=\"res://assets/backgrounds/beishan_snow_ending.png\" fade=\"0.3\"]\n三个月后，第一场雪落在北山围墙上。\n\n楚云天站在广播塔顶，看见基地里亮着一盏一盏灯。\n\n有些灯来自温室，有些来自医疗棚，有些来自新修好的教室。还有一些，只是普通人家在晚饭前点起的火。\n\n北山没有回到旧世界。\n\n但它不再只是废土上的临时避难所。\n\n林瑶: 首领，大家在等你给新基地命名。\n\n楚云天沉默了一会儿。\n\n楚云天: 就叫北山。我们不是从这里逃走的人，我们是从这里重新开始的人。\n\n风雪落下，广播塔的灯光穿过夜色。\n\nend\n\nlabel ending_famine\n[background arg=\"res://assets/backgrounds/beishan_famine_warning.png\" fade=\"0.2\"]\n饥荒没有在第一天爆发。\n\n它先是让粥变稀，让争吵变多，让仓库门口的人群一天比一天沉默。\n\n第十九天，北山有人冲进粮仓。第二十天，巡逻队拒绝向人群开枪。第二十一天，广播塔熄灭。\n\n楚云天最后一次打开库存表，发现上面已经没有任何可以分配的东西。\n\nend\n\nlabel ending_revolt\n起义发生在凌晨。\n\n不是某个英雄举起旗帜，而是三个棚区同时拒绝执行巡逻令。紧接着，粮仓被打开，医疗棚被占据，韩策的队伍分裂成两半。\n\n楚云天站在广播室里，听见外面的人喊他的名字。\n\n那不是拥戴，是审判。\n\nend\n\nlabel ending_monster\n[background arg=\"res://assets/backgrounds/beishan_monster_attack.png\" fade=\"0.2\"]\n巨兽第二次撞击时，围墙断了。\n\n临时电网没有接通，火油桶没有点燃，所有人都听见钢筋从混凝土里撕开的声音。\n\n楚云天被气浪掀倒在广播塔下。最后进入他视野的，是北山操场上翻滚的红雾。\n\n这个聚居地没有败给某一个错误，而是败给此前所有准备的不足。\n\nend\n"
+    }
+  },
+  "ai_config": {
+    "baseUrl": "https://api.deepseek.com/v1",
+    "model": "deepseek-chat",
+    "apiKey": "",
+    "maxTokens": 4096,
+    "temperature": 0.85
+  }
+}

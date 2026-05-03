@@ -1,6 +1,6 @@
 extends Control
 
-const NEXT_SCENE := "res://scenes/dtl_runner.tscn"
+const NEXT_SCENE := "res://scenes/main_menu.tscn"
 const CRAWL_SPEED := 55.0
 
 # Phase sequence
@@ -327,7 +327,7 @@ func _advance() -> void:
 func _input(event: InputEvent) -> void:
 	if _exiting:
 		return
-	var triggered := (event is InputEventKey and event.pressed and not event.echo) \
+	var triggered: bool = (event is InputEventKey and event.pressed and not event.echo) \
 		or (event is InputEventMouseButton and event.pressed)
 	if triggered:
 		_begin_exit()
